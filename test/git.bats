@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# shellcheck disable=SC2030,SC2031
 
 load test_helper
 
@@ -195,4 +196,142 @@ load test_helper
   sleep 1
 
   git log | grep -v -q 'Commit'
+}
+
+# git config ##################################################################
+
+@test "'_git_required()' recognizes git configuration that uses 'includeIf' with 'hasconfig:remote' when inside the specified directory." {
+  {
+    export HOME="${_TMP_DIR}"
+
+    git config --global user.name   "Sample Name"
+    git config --global user.email  "sample@example.test"
+
+    cat <<HEREDOC > "${_TMP_DIR}/.gitconfig_conditional_include_example"
+[user]
+  name  = Example Name
+  email = example@example.test
+HEREDOC
+
+    cat <<HEREDOC >> "${_TMP_DIR}/.gitconfig"
+[includeIf "hasconfig:remote.*.url:file://${_TMP_DIR}*/**"]
+  path = ${_TMP_DIR}/.gitconfig_conditional_include_example
+HEREDOC
+
+    cat "${_TMP_DIR}/.gitconfig"
+
+    "${_NB}" init
+    "${_NB}" add "Sample File.md" --content "Sample content."
+
+    "${_NB}" notebooks create "Example Notebook"
+    "${_NB}" use "Example Notebook"
+
+    _setup_remote_repo
+
+    "${_NB}" remote set "${_GIT_REMOTE_URL}" <<< "y${_NEWLINE}1${_NEWLINE}"
+
+    "${_NB}" add "Example File.md" --content "Example content."
+  }
+
+  run "${_NB}" show home:1 --author
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq  0                                       ]]
+  [[ "${output}" ==   "Sample Name <sample@example.test>"     ]]
+
+  run "${_NB}" show Example\ Notebook:1 --author
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq  0                                       ]]
+  [[ "${output}" ==   "Example Name <example@example.test>"   ]]
+}
+
+@test "'_git_required()' recognizes git configuration that uses 'includeIf' when inside the specified directory." {
+  {
+    export HOME="${_TMP_DIR}"
+
+    git config --global user.name   "Example Name"
+    git config --global user.email  "example@example.test"
+
+    cat <<HEREDOC > "${_TMP_DIR}/.gitconfig_conditional_include_example"
+[user]
+  name  = Sample Name
+  email = sample@example.test
+HEREDOC
+
+    cat <<HEREDOC >> "${_TMP_DIR}/.gitconfig"
+[includeIf "gitdir:~/"]
+  path = ${_TMP_DIR}/.gitconfig_conditional_include_example
+HEREDOC
+
+    cat "${_TMP_DIR}/.gitconfig"
+
+    "${_NB}" init
+    "${_NB}" add "Example File.md" --content "Example content."
+  }
+
+  run "${_NB}" show 1 --author
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq  0                                     ]]
+  [[ "${output}" ==   "Sample Name <sample@example.test>"   ]]
+}
+
+@test "'_git_required()' recognizes global git configuration  ignores 'includeIf' when outiside the specified directory." {
+  {
+    export HOME="${_TMP_DIR}"
+
+    git config --global user.name   "Example Name"
+    git config --global user.email  "example@example.test"
+
+    cat <<HEREDOC > "${_TMP_DIR}/.gitconfig_conditional_include_example"
+[user]
+  name  = Sample Name
+  email = sample@example.test
+HEREDOC
+
+    cat <<HEREDOC >> "${_TMP_DIR}/.gitconfig"
+[includeIf "gitdir:~/example-path"]
+  path = ${_TMP_DIR}/.gitconfig_conditional_include_example
+HEREDOC
+
+    cat "${_TMP_DIR}/.gitconfig"
+
+    "${_NB}" init
+    "${_NB}" add "Example File.md" --content "Example content."
+  }
+
+  run "${_NB}" show 1 --author
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq  0                                     ]]
+  [[ "${output}" ==   "Example Name <example@example.test>" ]]
+}
+
+@test "'_git_required()' recognizes global git configuration for the user." {
+  {
+    export HOME="${_TMP_DIR}"
+
+    git config --global user.name   "Example Name"
+    git config --global user.email  "example@example.test"
+
+    "${_NB}" init
+    "${_NB}" add "Example File.md" --content "Example content."
+  }
+
+  run "${_NB}" show 1 --author
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq  0                                     ]]
+  [[ "${output}" ==   "Example Name <example@example.test>" ]]
 }

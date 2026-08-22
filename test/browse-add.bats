@@ -2,11 +2,6 @@
 
 load test_helper
 
-export NB_SERVER_PORT=6789
-
-# non-breaking space
-export _S=" "
-
 # HTML <title> ################################################################
 
 @test "'browse add <folder>/' with local notebook sets HTML <title> to CLI command." {
@@ -16,7 +11,7 @@ export _S=" "
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add "Example Folder" --type "folder"
 
@@ -126,7 +121,7 @@ export _S=" "
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     (ncat                                   \
       --exec "${_NB} browse --respond"      \
@@ -181,7 +176,7 @@ HEREDOC
 
   [[ "${#lines[@]}" -eq 5                                                     ]]
 
-  declare _expected_param_pattern="--per-page=30\&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
+  declare _expected_param_pattern="--limit=30\&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
 
   [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                  ]]
   [[ "${lines[1]}"  =~  Date:\ .*                                             ]]
@@ -198,7 +193,7 @@ Location:\ \/\/localhost:6789\/Example\ Folder/1\?${_expected_param_pattern}  ]]
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     (ncat                                   \
       --exec "${_NB} browse --respond"      \
@@ -226,7 +221,7 @@ Location:\ \/\/localhost:6789\/Example\ Folder/1\?${_expected_param_pattern}  ]]
   [[    "${lines[4]}"  =~ Content-Type:\ text/html                        ]]
 
   [[    "${output}"    =~ \
-action=\"/local:\?--add\&--per-page=.*\&--columns=.*\&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook ]]
+action=\"/local:\?--add\&--columns=.*\&--limit=.*\&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook ]]
 
   [[    "${output}"    =~ \<input\ type=\"hidden\"\ name=\"--example\"\>  ]]
   [[    "${output}"    =~ \<input\ type=\"hidden\"\ name=\"-x\"\>         ]]
@@ -301,14 +296,14 @@ HEREDOC
 
   # Prints output:
 
-  [[ "${#lines[@]}" -eq 5                                                       ]]
+  [[ "${#lines[@]}" -eq 5                                                   ]]
 
-  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                    ]]
-  [[ "${lines[1]}"  =~  Date:\ .*                                               ]]
-  [[ "${lines[2]}"  =~  Expires:\ .*                                            ]]
-  [[ "${lines[3]}"  =~  Server:\ nb                                             ]]
+  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                ]]
+  [[ "${lines[1]}"  =~  Date:\ .*                                           ]]
+  [[ "${lines[2]}"  =~  Expires:\ .*                                        ]]
+  [[ "${lines[3]}"  =~  Server:\ nb                                         ]]
   [[ "${lines[4]}"  =~  \
-Location:\ \/\/localhost:6789\/Example\ Folder/Sample\ Folder/2\?--per-page=30  ]]
+Location:\ \/\/localhost:6789\/Example\ Folder/Sample\ Folder/2\?--limit=30 ]]
 }
 
 @test "POST to --add <folder-name>/<folder-name> (no slash) URL creates folder and file named 'Sample Folder' and redirects."  {
@@ -364,14 +359,14 @@ HEREDOC
 
   # Prints output:
 
-  [[ "${#lines[@]}" -eq 5                                       ]]
+  [[ "${#lines[@]}" -eq 5                                     ]]
 
-  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                    ]]
-  [[ "${lines[1]}"  =~  Date:\ .*                               ]]
-  [[ "${lines[2]}"  =~  Expires:\ .*                            ]]
-  [[ "${lines[3]}"  =~  Server:\ nb                             ]]
+  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                  ]]
+  [[ "${lines[1]}"  =~  Date:\ .*                             ]]
+  [[ "${lines[2]}"  =~  Expires:\ .*                          ]]
+  [[ "${lines[3]}"  =~  Server:\ nb                           ]]
   [[ "${lines[4]}"  =~  \
-Location:\ \/\/localhost:6789\/Example\ Folder/1\?--per-page=30 ]]
+Location:\ \/\/localhost:6789\/Example\ Folder/1\?--limit=30  ]]
 }
 
 @test "POST to --add <folder-name>/<folder-name>/ (slash) URL creates folders and note and redirects."  {
@@ -431,14 +426,14 @@ HEREDOC
 
   # Prints output:
 
-  [[ "${#lines[@]}" -eq 5                                                       ]]
+  [[ "${#lines[@]}" -eq 5                                                   ]]
 
-  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                    ]]
-  [[ "${lines[1]}"  =~  Date:\ .*                                               ]]
-  [[ "${lines[2]}"  =~  Expires:\ .*                                            ]]
-  [[ "${lines[3]}"  =~  Server:\ nb                                             ]]
+  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                ]]
+  [[ "${lines[1]}"  =~  Date:\ .*                                           ]]
+  [[ "${lines[2]}"  =~  Expires:\ .*                                        ]]
+  [[ "${lines[3]}"  =~  Server:\ nb                                         ]]
   [[ "${lines[4]}"  =~  \
-Location:\ \/\/localhost:6789\/Example\ Folder/Sample\ Folder/1\?--per-page=30  ]]
+Location:\ \/\/localhost:6789\/Example\ Folder/Sample\ Folder/1\?--limit=30 ]]
 }
 
 @test "POST to --add <folder-name>/<folder-name>/<filename> URL creates folders and note and redirects."  {
@@ -496,14 +491,14 @@ HEREDOC
 
   # Prints output:
 
-  [[ "${#lines[@]}" -eq 5                                                       ]]
+  [[ "${#lines[@]}" -eq 5                                                   ]]
 
-  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                    ]]
-  [[ "${lines[1]}"  =~  Date:\ .*                                               ]]
-  [[ "${lines[2]}"  =~  Expires:\ .*                                            ]]
-  [[ "${lines[3]}"  =~  Server:\ nb                                             ]]
+  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                ]]
+  [[ "${lines[1]}"  =~  Date:\ .*                                           ]]
+  [[ "${lines[2]}"  =~  Expires:\ .*                                        ]]
+  [[ "${lines[3]}"  =~  Server:\ nb                                         ]]
   [[ "${lines[4]}"  =~  \
-Location:\ \/\/localhost:6789\/Example\ Folder/Sample\ Folder/1\?--per-page=30  ]]
+Location:\ \/\/localhost:6789\/Example\ Folder/Sample\ Folder/1\?--limit=30 ]]
 }
 
 @test "POST to --add <folder-name>/<filename> URL creates folder and note and redirects."  {
@@ -561,13 +556,13 @@ HEREDOC
 
   # Prints output:
 
-  [[ "${#lines[@]}" -eq 5                                                               ]]
+  [[ "${#lines[@]}" -eq 5                                                             ]]
 
-  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                            ]]
-  [[ "${lines[1]}"  =~  Date:\ .*                                                       ]]
-  [[ "${lines[2]}"  =~  Expires:\ .*                                                    ]]
-  [[ "${lines[3]}"  =~  Server:\ nb                                                     ]]
-  [[ "${lines[4]}"  =~  Location:\ \/\/localhost:6789\/Example\ Folder/1\?--per-page=30 ]]
+  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                                          ]]
+  [[ "${lines[1]}"  =~  Date:\ .*                                                     ]]
+  [[ "${lines[2]}"  =~  Expires:\ .*                                                  ]]
+  [[ "${lines[3]}"  =~  Server:\ nb                                                   ]]
+  [[ "${lines[4]}"  =~  Location:\ \/\/localhost:6789\/Example\ Folder/1\?--limit=30  ]]
 }
 
 @test "POST to --add <filename> URL creates note and redirects."  {
@@ -625,13 +620,13 @@ HEREDOC
 
   # Prints output:
 
-  [[ "${#lines[@]}" -eq 5                                               ]]
+  [[ "${#lines[@]}" -eq 5                                             ]]
 
-  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                            ]]
-  [[ "${lines[1]}"  =~  Date:\ .*                                       ]]
-  [[ "${lines[2]}"  =~  Expires:\ .*                                    ]]
-  [[ "${lines[3]}"  =~  Server:\ nb                                     ]]
-  [[ "${lines[4]}"  =~  Location:\ \/\/localhost:6789\/1\?--per-page=30 ]]
+  [[ "${lines[0]}"  =~  HTTP/1.0\ 302\ Found                          ]]
+  [[ "${lines[1]}"  =~  Date:\ .*                                     ]]
+  [[ "${lines[2]}"  =~  Expires:\ .*                                  ]]
+  [[ "${lines[3]}"  =~  Server:\ nb                                   ]]
+  [[ "${lines[4]}"  =~  Location:\ \/\/localhost:6789\/1\?--limit=30  ]]
 }
 
 # CLI #########################################################################
@@ -660,26 +655,26 @@ HEREDOC
   [[    "${output}"  =~  ❯.*nb.*\ .*·.*\ .*Example\ Notebook.*\ .*:.*\ .*1  ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1><a rel=\"noopener noreferrer\" href=\"//lo"
+"<nav class=\"header-crumbs\"><strong><a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/?--per-page=.*&--columns=.*\"><span class=\"dim\">❯</span>nb</a>"
+"calhost:6789/?--columns=.*&--limit=.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-" <span class=\"dim\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
+" <span class=\"muted\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/Example%20Notebook:?--per-page=.*&--columns=.*\">Example Notebook</a>"
+"calhost:6789/Example%20Notebook:?--columns=.*&--limit=.*\">Example Notebook</a>"
 
   printf "%s\\n" "${output}" | grep -q "rows=\".*\">"
 
   printf "%s\\n" "${output}" | grep -q \
-"action=\"/Example%20Notebook:Example%20Folder/Example%20File.md?--add&--per-page=.*&--columns=.*\""
+"action=\"/Example%20Notebook:Example%20Folder/Example%20File.md?--add&--columns=.*&--limit=.*\""
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"
 
-  printf "%s\\n" "${output}" | grep -q \
+  printf "%s\\n" "${output}" | rg --multiline -q \
 "rows=\".*\"># Example Title${_NEWLINE}${_NEWLINE}#tag1 #tag2${_NEWLINE}${_NEWLINE}Example content.${_NEWLINE}</textarea>"
 
   printf "%s\\n" "${output}" | grep -q -v \
@@ -706,26 +701,26 @@ HEREDOC
   [[    "${output}"  =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*1 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1><a rel=\"noopener noreferrer\" href=\"//lo"
+"<nav class=\"header-crumbs\"><strong><a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/?--per-page=.*&--columns=.*\"><span class=\"dim\">❯</span>nb</a>"
+"calhost:6789/?--columns=.*&--limit=.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-" <span class=\"dim\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
+" <span class=\"muted\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/home:?--per-page=.*&--columns=.*\">home</a>"
+"calhost:6789/home:?--columns=.*&--limit=.*\">home</a>"
 
   printf "%s\\n" "${output}" | grep -q "rows=\".*\">"
 
   printf "%s\\n" "${output}" | grep -q \
-"action=\"/home:Example%20Folder/Example%20File.md?--add&--per-page=.*&--columns=.*\""
+"action=\"/home:Example%20Folder/Example%20File.md?--add&--columns=.*&--limit=.*\""
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"
 
-  printf "%s\\n" "${output}" | grep -q \
+  printf "%s\\n" "${output}" | rg --multiline -q \
 "rows=\".*\"># Example Title${_NEWLINE}${_NEWLINE}#tag1 #tag2${_NEWLINE}${_NEWLINE}Example content.${_NEWLINE}</textarea>"
 
   printf "%s\\n" "${output}" | grep -q -v \
@@ -755,26 +750,26 @@ HEREDOC
   [[    "${output}"  =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*1 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1><a rel=\"noopener noreferrer\" href=\"//lo"
+"<nav class=\"header-crumbs\"><strong><a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/?--per-page=.*&--columns=.*\"><span class=\"dim\">❯</span>nb</a>"
+"calhost:6789/?--columns=.*&--limit=.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-" <span class=\"dim\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
+" <span class=\"muted\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/home:?--per-page=.*&--columns=.*\">home</a>"
+"calhost:6789/home:?--columns=.*&--limit=.*\">home</a>"
 
   printf "%s\\n" "${output}" | grep -q "rows=\".*\">"
 
   printf "%s\\n" "${output}" | grep -q \
-"action=\"/home:Example%20Folder/Example%20File.md?--add&--per-page=.*&--columns=.*\""
+"action=\"/home:Example%20Folder/Example%20File.md?--add&--columns=.*&--limit=.*\""
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"
 
-  printf "%s\\n" "${output}" | grep -q \
+  printf "%s\\n" "${output}" | rg --multiline -q \
 "rows=\".*\"># Example Title${_NEWLINE}${_NEWLINE}#tag1 #tag2${_NEWLINE}${_NEWLINE}Example content.${_NEWLINE}</textarea>"
 
   printf "%s\\n" "${output}" | grep -q -v \
@@ -803,26 +798,26 @@ HEREDOC
   [[    "${output}"  =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*Example\ Folder ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1><a rel=\"noopener noreferrer\" href=\"//lo"
+"<nav class=\"header-crumbs\"><strong><a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/?--per-page=.*&--columns=.*\"><span class=\"dim\">❯</span>nb</a>"
+"calhost:6789/?--columns=.*&--limit=.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-" <span class=\"dim\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
+" <span class=\"muted\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/home:?--per-page=.*&--columns=.*\">home</a>"
+"calhost:6789/home:?--columns=.*&--limit=.*\">home</a>"
 
   printf "%s\\n" "${output}" | grep -q "rows=\".*\">"
 
   printf "%s\\n" "${output}" | grep -q \
-"action=\"/home:Example%20Folder/Example%20File.md?--add&--per-page=.*&--columns=.*\""
+"action=\"/home:Example%20Folder/Example%20File.md?--add&--columns=.*&--limit=.*\""
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"
 
-  printf "%s\\n" "${output}" | grep -q \
+  printf "%s\\n" "${output}" | rg --multiline -q \
 "rows=\".*\"># Example Title${_NEWLINE}${_NEWLINE}#tag1 #tag2${_NEWLINE}${_NEWLINE}Example content.${_NEWLINE}</textarea>"
 
   printf "%s\\n" "${output}" | grep -q -v \
@@ -848,21 +843,21 @@ HEREDOC
   [[    "${output}"  =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*1 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1><a rel=\"noopener noreferrer\" href=\"//lo"
+"<nav class=\"header-crumbs\"><strong><a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/?--per-page=.*&--columns=.*\"><span class=\"dim\">❯</span>nb</a>"
+"calhost:6789/?--columns=.*&--limit=.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-" <span class=\"dim\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
+" <span class=\"muted\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/home:?--per-page=.*&--columns=.*\">home</a>"
+"calhost:6789/home:?--columns=.*&--limit=.*\">home</a>"
 
   printf "%s\\n" "${output}" | grep -q "rows=\".*\">"
 
   printf "%s\\n" "${output}" | grep -q \
-"action=\"/home:Example%20Folder/?--add&--per-page=.*&--columns=.*\""
+"action=\"/home:Example%20Folder/?--add&--columns=.*&--limit=.*\""
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"
@@ -959,11 +954,11 @@ HEREDOC
   [[ "${output}"    =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*1      ]]
 
   printf "%s\\n" "${output}" | grep -q \
-    "href=\"//localhost:6789/?--per-page=30&--columns=20\"><span class=\"dim\">❯</span>nb</a> "
+    "href=\"//localhost:6789/?--columns=20&--limit=30\"><span class=\"muted\">❯</span>nb</a> "
 
   printf "%s\\n" "${output}" | grep -q "rows=\"32\">"
-  printf "%s\\n" "${output}" | grep -q \
-    "<form${_NEWLINE}action=\"/home:?--add&--per-page=30--columns=20"
+  printf "%s\\n" "${output}" | rg --multiline -q \
+    "<form${_NEWLINE}.*${_NEWLINE}.*action=\"/home:\?--add&--columns=.*&--limit=.*"
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"
@@ -1016,16 +1011,16 @@ HEREDOC
   [[ "${lines[4]}"  =~  Content-Type:\ text/html\;\ charset=UTF-8 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1><a rel=\"noopener noreferrer\" href=\"//lo"
+"<nav class=\"header-crumbs\"><strong><a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/?--per-page=.*&--columns=.*\"><span class=\"dim\">❯</span>nb</a>"
+"calhost:6789/?--columns=.*&--limit=.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-" <span class=\"dim\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
+" <span class=\"muted\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/home:?--per-page=.*&--columns=.*\">home</a>"
+"calhost:6789/home:?--columns=.*&--limit=.*\">home</a>"
 
   printf "%s\\n" "${output}" | grep -q "rows=\"32\">"
 
@@ -1079,10 +1074,10 @@ HEREDOC
   [[ "${lines[3]}"  =~  Server:\ nb                               ]]
   [[ "${lines[4]}"  =~  Content-Type:\ text/html\;\ charset=UTF-8 ]]
 
-  [[ "${output}"    =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*1      ]]
+  [[ "${output}"    =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*\+     ]]
 
-  printf "%s\\n" "${output}" | grep -q \
-"<form${_NEWLINE}action=\"/home:?--add"
+  printf "%s\\n" "${output}" | rg --multiline -q \
+"<form${_NEWLINE}.*${_NEWLINE}.*action=\"/home:\?--add"
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"

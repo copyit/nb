@@ -2,11 +2,6 @@
 
 load test_helper
 
-export NB_SERVER_PORT=6789
-
-# non-breaking space
-export _S=" "
-
 # terminal formatting #########################################################
 
 @test "'browse --notebooks' breaks lines and omits separator at column limit." {
@@ -32,28 +27,25 @@ export _S=" "
   [[ "${output}"  =~  \<\!DOCTYPE\ html\> ]]
 
   printf "%s\\n" "${output}" | grep   -q \
-"<nav class=\"header-crumbs\"><h1>"
+"<nav class=\"header-crumbs\">"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/?--per-page=.*&--columns=.*\"><span "
+"<a.* href=\"//localhost:6789/?--columns=.*&--limit=.*\"><span "
 
   printf "%s\\n" "${output}" | grep   -q \
-"<span class=\"dim\">❯</span>nb</a> <span class=\"dim\">·</span> <span class=\"dim\">notebooks</span>"
+"<span class=\"muted\">❯</span>nb</a> <span class=\"muted\">·</span> <span class=\"muted\">notebooks</span>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"</h1>"
+"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--columns=.*&--limit=.*\">Demo${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--per-page=.*&--columns=.*\">Demo${_S}Notebook</a>${_S}.*·.*"
+"<a.* href=\"//localhost:6789/Example%20Notebook:?--columns=.*&--limit=.*\">Example${_S}Notebook</a><br>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Example%20Notebook:?--per-page=.*&--columns=.*\">Example${_S}Notebook</a><br>"
+"<a.* href=\"//localhost:6789/Sample%20Notebook:?--columns=.*&--limit=.*\">Sample${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Sample%20Notebook:?--per-page=.*&--columns=.*\">Sample${_S}Notebook</a>${_S}.*·.*"
-
-  printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Test%20Notebook:?--per-page=.*&--columns=.*\">Test${_S}Notebook</a></p>"
+"<a.* href=\"//localhost:6789/Test%20Notebook:?--columns=.*&--limit=.*\">Test${_S}Notebook</a></p>"
 
   run "${_NB}" browse --notebooks --columns 10 --print
 
@@ -64,28 +56,25 @@ export _S=" "
   [[ "${output}"  =~  \<\!DOCTYPE\ html\> ]]
 
   printf "%s\\n" "${output}" | grep   -q \
-"<nav class=\"header-crumbs\"><h1>"
+"<nav class=\"header-crumbs\">"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/?--per-page=.*&--columns=.*\"><span "
+"<a.* href=\"//localhost:6789/?--columns=.*&--limit=.*\"><span "
 
   printf "%s\\n" "${output}" | grep   -q \
-"<span class=\"dim\">❯</span>nb</a> <span class=\"dim\">·</span> <span class=\"dim\">notebooks</span>"
+"<span class=\"muted\">❯</span>nb</a> <span class=\"muted\">·</span> <span class=\"muted\">notebooks</span>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"</h1>"
+"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--columns=.*&--limit=.*\">Demo${_S}Notebook</a><br>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--per-page=.*&--columns=.*\">Demo${_S}Notebook</a><br>"
+"<a.* href=\"//localhost:6789/Example%20Notebook:?--columns=.*&--limit=.*\">Example${_S}Notebook</a><br>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Example%20Notebook:?--per-page=.*&--columns=.*\">Example${_S}Notebook</a><br>"
+"<a.* href=\"//localhost:6789/Sample%20Notebook:?--columns=.*&--limit=.*\">Sample${_S}Notebook</a><br>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Sample%20Notebook:?--per-page=.*&--columns=.*\">Sample${_S}Notebook</a><br>"
-
-  printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Test%20Notebook:?--per-page=.*&--columns=.*\">Test${_S}Notebook</a></p>"
+"<a.* href=\"//localhost:6789/Test%20Notebook:?--columns=.*&--limit=.*\">Test${_S}Notebook</a></p>"
 }
 
 # HTML <title> ################################################################
@@ -117,7 +106,7 @@ export _S=" "
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" notebooks add "Example Notebook"
     "${_NB}" notebooks add "Sample Notebook"
@@ -129,7 +118,7 @@ export _S=" "
     [[ !  -e "${NB_DIR}/home"           ]]
 
     declare _local_notebook_param="--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
-    declare _expected_param_pattern="${_local_notebook_param}&--per-page=.*&--columns=.*"
+    declare _expected_param_pattern="${_local_notebook_param}&--columns=.*&--limit=.*"
   }
 
   run "${_NB}" browse --notebooks --print
@@ -141,16 +130,13 @@ export _S=" "
   [[ "${output}"  =~  \<\!DOCTYPE\ html\> ]]
 
   printf "%s\\n" "${output}" | grep     -q \
-"<nav class=\"header-crumbs\"><h1>"
+"<nav class=\"header-crumbs\">"
 
   printf "%s\\n" "${output}" | grep     -q \
 "<a.* href=\"//localhost:6789/?${_expected_param_pattern}\"><span "
 
   printf "%s\\n" "${output}" | grep     -q \
-"<span class=\"dim\">❯</span>nb</a> <span class=\"dim\">·</span> <span class=\"dim\">notebooks</span>"
-
-  printf "%s\\n" "${output}" | grep     -q \
-"</h1>"
+"<span class=\"muted\">❯</span>nb</a> <span class=\"muted\">·</span> <span class=\"muted\">notebooks</span>"
 
   printf "%s\\n" "${output}" | grep -v  -q \
 "<p><a.* href=\"//localhost:6789/local:?.*<a.* href=\"//localhost:6789/local:?"
@@ -196,28 +182,25 @@ export _S=" "
   [[ "${output}"  =~  \<\!DOCTYPE\ html\> ]]
 
   printf "%s\\n" "${output}" | grep   -q \
-"<nav class=\"header-crumbs\"><h1>"
+"<nav class=\"header-crumbs\">"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/?--per-page=.*&--columns=.*\"><span "
+"<a.* href=\"//localhost:6789/?--columns=.*&--limit=.*\"><span "
 
   printf "%s\\n" "${output}" | grep   -q \
-"<span class=\"dim\">❯</span>nb</a> <span class=\"dim\">·</span> <span class=\"dim\">notebooks</span>"
+"<span class=\"muted\">❯</span>nb</a> <span class=\"muted\">·</span> <span class=\"muted\">notebooks</span>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"</h1>"
+"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--columns=.*&--limit=.*\">Demo${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--per-page=.*&--columns=.*\">Demo${_S}Notebook</a>${_S}.*·.*"
+"<a.* href=\"//localhost:6789/Example%20Notebook:?--columns=.*&--limit=.*\">Example${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Example%20Notebook:?--per-page=.*&--columns=.*\">Example${_S}Notebook</a>${_S}.*·.*"
+"<a.* href=\"//localhost:6789/Sample%20Notebook:?--columns=.*&--limit=.*\">Sample${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Sample%20Notebook:?--per-page=.*&--columns=.*\">Sample${_S}Notebook</a>${_S}.*·.*"
-
-  printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Test%20Notebook:?--per-page=.*&--columns=.*\">Test${_S}Notebook</a></p>"
+"<a.* href=\"//localhost:6789/Test%20Notebook:?--columns=.*&--limit=.*\">Test${_S}Notebook</a></p>"
 }
 
 # browse --notebooks ##########################################################
@@ -245,31 +228,28 @@ export _S=" "
   [[ "${output}"  =~  \<\!DOCTYPE\ html\> ]]
 
   printf "%s\\n" "${output}" | grep   -q \
-"<nav class=\"header-crumbs\"><h1>"
+"<nav class=\"header-crumbs\">"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/?--per-page=.*&--columns=.*\"><span "
+"<a.* href=\"//localhost:6789/?--columns=.*&--limit=.*\"><span "
 
   printf "%s\\n" "${output}" | grep   -q \
-"<span class=\"dim\">❯</span>nb</a> <span class=\"dim\">·</span> <span class=\"dim\">notebooks</span>"
+"<span class=\"muted\">❯</span>nb</a> <span class=\"muted\">·</span> <span class=\"muted\">notebooks</span>"
 
   printf "%s\\n" "${output}" | grep   -q \
-"</h1>"
+"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--columns=.*&--limit=.*\">Demo${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<p><a.* href=\"//localhost:6789/Demo%20Notebook:?--per-page=.*&--columns=.*\">Demo${_S}Notebook</a>${_S}.*·.*"
+"<a.* href=\"//localhost:6789/Example%20Notebook:?--columns=.*&--limit=.*\">Example${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Example%20Notebook:?--per-page=.*&--columns=.*\">Example${_S}Notebook</a>${_S}.*·.*"
+"<a.* href=\"//localhost:6789/Sample%20Notebook:?--columns=.*&--limit=.*\">Sample${_S}Notebook</a>${_S}.*·.*"
 
   printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Sample%20Notebook:?--per-page=.*&--columns=.*\">Sample${_S}Notebook</a>${_S}.*·.*"
-
-  printf "%s\\n" "${output}" | grep   -q \
-"<a.* href=\"//localhost:6789/Test%20Notebook:?--per-page=.*&--columns=.*\">Test${_S}Notebook</a></p>"
+"<a.* href=\"//localhost:6789/Test%20Notebook:?--columns=.*&--limit=.*\">Test${_S}Notebook</a></p>"
 }
 
-@test "GET to 'browse --notebooks' URL serves the list of unarchived notebooks as a rendered HTML page with links to internal web server URLs without dimensional parameters." {
+@test "GET to 'browse --notebooks' URL serves the list of unarchived notebooks as a rendered HTML page with links to internal web server URLs without mutedensional parameters." {
   {
     "${_NB}" init
 
@@ -300,16 +280,13 @@ export _S=" "
   [[ "${output}"  =~  \<\!DOCTYPE\ html\> ]]
 
   printf "%s\\n" "${output}" | grep   -q \
-"<nav class=\"header-crumbs\"><h1>"
+"<nav class=\"header-crumbs\">"
 
   printf "%s\\n" "${output}" | grep   -q \
 "<a.* href=\"//localhost:6789/\"><span "
 
   printf "%s\\n" "${output}" | grep   -q \
-"<span class=\"dim\">❯</span>nb</a> <span class=\"dim\">·</span> <span class=\"dim\">notebooks</span>"
-
-  printf "%s\\n" "${output}" | grep   -q \
-"</h1>"
+"<span class=\"muted\">❯</span>nb</a> <span class=\"muted\">·</span> <span class=\"muted\">notebooks</span>"
 
   printf "%s\\n" "${output}" | grep   -q \
 "<p><a.* href=\"//localhost:6789/Demo%20Notebook:\">Demo${_S}Notebook</a>${_S}.*·.*"

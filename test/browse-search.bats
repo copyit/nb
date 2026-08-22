@@ -2,11 +2,6 @@
 
 load test_helper
 
-export NB_SERVER_PORT=6789
-
-# non-breaking space
-export _S=" "
-
 # --and / --or ################################################################
 
 @test "'browse --container -q \#tag2 --or \#tag3' performs OR search." {
@@ -34,7 +29,7 @@ export _S=" "
       --content "Content #tag2 #tag3 five."
   }
 
-  run "${_NB}" browse --container -t tag2 --or -t tag3
+  run "${_NB}" browse --container -q \#tag2 --or \#tag3
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -45,14 +40,14 @@ export _S=" "
   [[ !  "${output}"   =~ Title${_S}Four   ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
+identifier\"\>home:5\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
 
   [[    "${output}"   =~   \
-identifier\"\>home:3\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Three\</a\>\<br\> ]]
+identifier\"\>home:3\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Three\</a\>\<br\> ]]
 }
 
 @test "'browse --container -q \#tag2 --and \#tag3' performs AND search." {
@@ -92,11 +87,11 @@ identifier\"\>home:3\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Three\
   [[ !  "${output}"   =~ Title${_S}Four   ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
+identifier\"\>home:5\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
 }
 
 # -t / --tag / --tags #########################################################
@@ -138,11 +133,11 @@ identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\<
   [[ !  "${output}"   =~ Title${_S}Four   ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
+identifier\"\>home:5\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
 }
 
 @test "'browse --container -t tag2,tag3' performs AND search." {
@@ -182,11 +177,11 @@ identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\<
   [[ !  "${output}"   =~ Title${_S}Four   ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
+identifier\"\>home:5\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
 }
 
 @test "'browse --container -t tag2 --or -t tag3' performs OR search." {
@@ -225,14 +220,14 @@ identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\<
   [[ !  "${output}"   =~ Title${_S}Four   ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
+identifier\"\>home:5\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
 
   [[    "${output}"   =~   \
-identifier\"\>home:3\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Three\</a\>\<br\> ]]
+identifier\"\>home:3\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Three\</a\>\<br\> ]]
 }
 
 @test "'browse --container -t tag2 -t tag3' performs AND search." {
@@ -272,11 +267,11 @@ identifier\"\>home:3\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Three\
   [[ !  "${output}"   =~ Title${_S}Four   ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
+identifier\"\>home:5\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Five\</a\>\<br\>  ]]
 }
 
 @test "'browse --container -t tag1' performs search." {
@@ -316,14 +311,14 @@ identifier\"\>home:5\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Five\<
   [[ !  "${output}"   =~ Title${_S}Five   ]]
 
   [[    "${output}"   =~   \
-identifier\"\>home:4\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Four\</a\>\<br\>  ]]
+identifier\"\>home:4\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Four\</a\>\<br\>  ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\>   ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\>   ]]
 }
 
 @test "'browse --container --tag #tag1' (hash) performs search." {
@@ -363,14 +358,14 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[ !  "${output}"   =~ Title${_S}Five   ]]
 
   [[    "${output}"   =~   \
-identifier\"\>home:4\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Four\</a\>\<br\>  ]]
+identifier\"\>home:4\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Four\</a\>\<br\>  ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\>   ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\>   ]]
 }
 
 @test "'browse --container --tag tag1' (no hash) performs search." {
@@ -410,14 +405,14 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[ !  "${output}"   =~ Title${_S}Five   ]]
 
   [[    "${output}"   =~   \
-identifier\"\>home:4\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Four\</a\>\<br\>  ]]
+identifier\"\>home:4\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Four\</a\>\<br\>  ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>             ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>    ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>     ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\>   ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\>   ]]
 }
 
 # notebook: selectors #########################################################
@@ -441,9 +436,9 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[    "${status}"   -eq 0 ]]
 
   [[    "${output}" =~  \
-\[\</span\>\<span\ class=\"identifier\"\>home:1\</span\>\<span\ class=\"dim\"\>\]                   ]]
+\[\</span\>\<span\ class=\"identifier\"\>home:1\</span\>\<span\ class=\"muted\"\>\]                   ]]
   [[    "${output}" =~  \
-\[\</span\>\<span\ class=\"identifier\"\>home:Sample${_S}Folder/2\</span\>\<span\ class=\"dim\"\>\] ]]
+\[\</span\>\<span\ class=\"identifier\"\>home:Sample${_S}Folder/2\</span\>\<span\ class=\"muted\"\>\] ]]
 }
 
 @test "'browse --query <query>' includes notebook selectors for results in a selected notebook." {
@@ -467,9 +462,9 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[    "${status}"   -eq 0 ]]
 
   [[    "${output}" =~  \
-\[\</span\>\<span\ class=\"identifier\"\>Example${_S}Notebook:1\</span\>\<span\ class=\"dim\"\>\]                   ]]
+\[\</span\>\<span\ class=\"identifier\"\>Example${_S}Notebook:1\</span\>\<span\ class=\"muted\"\>\]                   ]]
   [[    "${output}" =~  \
-\[\</span\>\<span\ class=\"identifier\"\>Example${_S}Notebook:Sample${_S}Folder/2\</span\>\<span\ class=\"dim\"\>\] ]]
+\[\</span\>\<span\ class=\"identifier\"\>Example${_S}Notebook:Sample${_S}Folder/2\</span\>\<span\ class=\"muted\"\>\] ]]
 }
 
 # local notebook ##############################################################
@@ -481,7 +476,7 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add  "File One.md"       \
       --title     "Title One"         \
@@ -494,7 +489,7 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
     "${_NB}" add  "Example Folder"    \
       --type      "folder"
 
-    declare _expected_param_pattern="--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook\&--per-page=.*"
+    declare _expected_param_pattern="--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook\&--columns=.*\&--limit=.*"
 
     sleep 1
   }
@@ -510,16 +505,16 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   # header crumbs
 
   [[ "${output}"  =~  \
-\<nav\ class=\"header-crumbs\"\>\<h1\>.*\<a.*\ href=\"//localhost:6789/\?${_expected_param_pattern}\"\> ]]
+\<nav\ class=\"header-crumbs\"\>.*\<a.*\ href=\"//localhost:6789/\?${_expected_param_pattern}\"\>   ]]
   [[ "${output}"  =~  \
-href=\"//localhost:6789/\?${_expected_param_pattern}\"\>\<span\ class=\"dim\"\>❯\</span\>nb\</a\>       ]]
+href=\"//localhost:6789/\?${_expected_param_pattern}\"\>\<span\ class=\"muted\"\>❯\</span\>nb\</a\> ]]
   [[ "${output}"  =~  \
-.*·.*\ \<a.*\ href=\"//localhost:6789/local:\?${_expected_param_pattern}\"\>local\</a\>.*\</h1\>        ]]
+.*·.*\ \<a.*\ href=\"//localhost:6789/local:\?${_expected_param_pattern}\"\>local\</a\>.*\</nav\>   ]]
 
   # form
 
   [[ "${output}"  =~  \
-action=\"/local:\?--per-page=.*\&--columns=.*\&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook\" ]]
+action=\"/local:\?--columns=.*\&--limit=.*\&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook\"      ]]
 
   [[ "${output}"  =~  value=\"abcd\ efgh\"\>                                                ]]
 
@@ -529,16 +524,16 @@ action=\"/local:\?--per-page=.*\&--columns=.*\&--local=${_TMP_DIR//$'/'/%2F}%2FL
   # list
 
   [[ !  "${output}" =~  \
-\<a.*\ href=\"//localhost:6789/local:3\?--per-page=.*\&--local=.*\"\ class=\"list-item\"\>  ]]
-  [[ !  "${output}" =~  .*\[.*local:3.*\].*${_S}📂${_S}Example${_S}Folder\</a\>\<br\>       ]]
+\<a.*\ href=\"//localhost:6789/local:3\?--columns=.*\&--limit=.*\&--local=.*\"\ class=\"list-item\"\> ]]
+  [[ !  "${output}" =~  .*\[.*local:3.*\].*${_S}📂${_S}Example${_S}Folder\</a\>\<br\>                 ]]
 
   [[    "${output}" =~  \
-\<a.*\ href=\"//localhost:6789/local:2\?--per-page=.*\"\ class=\"list-item\"\>  ]]
-  [[    "${output}" =~  .*\[.*local:2.*\].*${_S}Title${_S}Two\</a\>\<br\>       ]]
+\<a.*\ href=\"//localhost:6789/local:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>   ]]
+  [[    "${output}" =~  .*\[.*local:2.*\].*${_S}Title${_S}Two\</a\>\<br\>                   ]]
 
   [[ !  "${output}" =~  \
-\<a.*\ href=\"//localhost:6789/local:1\?--per-page=.*\"\ class=\"list-item\"\>  ]]
-  [[ !  "${output}" =~  .*\[.*local:1.*\].*${_S}Title${_S}One\</a\>\<br\>       ]]
+\<a.*\ href=\"//localhost:6789/local:1\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>   ]]
+  [[ !  "${output}" =~  .*\[.*local:1.*\].*${_S}Title${_S}One\</a\>\<br\>                   ]]
 }
 
 # normalization ###############################################################
@@ -569,11 +564,11 @@ action=\"/local:\?--per-page=.*\&--columns=.*\&--local=${_TMP_DIR//$'/'/%2F}%2FL
   [[ !  "${output}"   =~ Title\ One ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>           ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>  ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
 
   {
     (ncat                               \
@@ -595,11 +590,11 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[ !  "${output}"   =~ Title\ One ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>           ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>  ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
 }
 
 # no matches ##################################################################
@@ -620,10 +615,34 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[    "${status}"  -eq  0 ]]
 
   printf "%s\\n" "${output}" | grep   -q \
-    "Not found: non-matching-query"
+    "Not${_NBSP}found:${_NBSP}non-matching-query"
 
   printf "%s\\n" "${output}" | grep   -q \
     "placeholder=\"search\"${_NEWLINE}type=\"text\"${_NEWLINE}value=\"non-matching-query\">"
+}
+
+@test "'browse --container --query' with no match displays message with encoded query." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add "File One.md" --title "Title One" --content "Content one."
+    "${_NB}" add "File Two.md" --title "Title Two" --content "Content abcde two."
+  }
+
+  run "${_NB}" browse --container --query "<script>alert(document.cookie)</script>"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  declare _amp='\&'
+
+  [[    "${status}"  -eq  0 ]]
+
+  printf "%s\\n" "${output}" | grep   -q \
+    "Not${_NBSP}found:${_NBSP}${_amp}#60;script${_amp}#62;alert${_amp}#40;document.cookie${_amp}#41;${_amp}#60;/script${_amp}#62;"
+
+  printf "%s\\n" "${output}" | grep   -q \
+    "placeholder=\"search\"${_NEWLINE}type=\"text\"${_NEWLINE}value=\"<script>alert(document.cookie)</script>\">"
 }
 
 # search form #################################################################
@@ -688,11 +707,11 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[ !  "${output}"   =~ Title\ One ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>           ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>  ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
 }
 
 @test "'browse --container --query' with tag performs search." {
@@ -713,11 +732,11 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[ !  "${output}"   =~ Title\ One ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>           ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>  ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
 }
 
 @test "'browse --container --query' performs search." {
@@ -738,11 +757,11 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[ !  "${output}"   =~ Title\ One ]]
 
   [[    "${output}"   =~  \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\"\ class=\"list-item\"\>           ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>  ]]
   [[    "${output}"   =~   \
-class=\"list-item\"\>\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
+class=\"list-item\"\>\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>   ]]
   [[    "${output}"   =~   \
-identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
+identifier\"\>home:2\</span\>\<span\ class=\"muted\"\>\]\</span\>\ Title\ Two\</a\>\<br\> ]]
 }
 
 @test "'browse --query' performs search." {
@@ -767,13 +786,13 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
     "placeholder=\"search\"${_NEWLINE}type=\"text\"${_NEWLINE}value=\"abcde\">"
 
   printf "%s\\n" "${output}" | grep     -q \
-    "<a.* href=\"//localhost:6789/home:2?--per-page=.*\" class=\"list-item\">"
+    "<a.* href=\"//localhost:6789/home:2?--columns=.*&--limit=.*\" class=\"list-item\">"
 
   printf "%s\\n" "${output}" | grep     -q \
-    "class=\"list-item\"><span class=\"dim\">\[</span><span class=\"identifier\">"
+    "class=\"list-item\"><span class=\"muted\">\[</span><span class=\"identifier\">"
 
   printf "%s\\n" "${output}" | grep     -q \
-    "identifier\">home:2</span><span class=\"dim\">\]</span> Title Two</a><br>"
+    "identifier\">home:2</span><span class=\"muted\">\]</span> Title Two</a><br>"
 }
 
 @test "'browse --query \"<#hashtag>|<#hashtag>\"' performs OR search." {
@@ -798,19 +817,19 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[    "${output}" =~ value=\"\&#35\;xyz\|\&#35\;abcde\" ]]
 
   [[    "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[    "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:4\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:4\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[    "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:3\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:3\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[    "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[ !  "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:1\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:1\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
 }
 
@@ -835,19 +854,19 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
   [[    "${output}" =~ value=\"\&#35\;xyz\ \&#35\;abcde\" ]]
 
   [[    "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:5\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:5\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[ !  "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:4\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:4\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[    "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:3\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:3\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[ !  "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:2\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:2\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 
   [[ !  "${output}" =~ \
-\<a.*\ href=\"//localhost:6789/home:1\?--per-page=.*\&--columns=.*\"\ class=\"list-item\"\>\<span\  ]]
+\<a.*\ href=\"//localhost:6789/home:1\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>\<span\  ]]
 }
 
 @test "'browse --query <#hashtag>' performs search." {
@@ -872,13 +891,13 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
     "placeholder=\"search\"${_NEWLINE}type=\"text\"${_NEWLINE}value=\"#abcde\">"
 
   printf "%s\\n" "${output}" | grep     -q \
-    "<a.* href=\"//localhost:6789/home:2?--per-page=.*\" class=\"list-item\">"
+    "<a.* href=\"//localhost:6789/home:2?--columns=.*&--limit=.*\" class=\"list-item\">"
 
   printf "%s\\n" "${output}" | grep     -q \
-    "class=\"list-item\"><span class=\"dim\">\[</span><span class=\"identifier\">"
+    "class=\"list-item\"><span class=\"muted\">\[</span><span class=\"identifier\">"
 
   printf "%s\\n" "${output}" | grep     -q \
-    "identifier\">home:2</span><span class=\"dim\">\]</span> Title Two</a><br>"
+    "identifier\">home:2</span><span class=\"muted\">\]</span> Title Two</a><br>"
 }
 
 @test "'browse --query' performs paginated search." {
@@ -901,7 +920,7 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
     done
   }
 
-  run "${_NB}" browse --query "abcde" --print --per-page 2 --page 1
+  run "${_NB}" browse --query "abcde" --print --limit 2 --page 1
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -916,7 +935,7 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
 
   [[ !  "${output}"   =~ Title${_S}Two    ]]
 
-  run "${_NB}" browse --query "abcde" --print --per-page 2 --page 2
+  run "${_NB}" browse --query "abcde" --print --limit 2 --page 2
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -931,7 +950,7 @@ identifier\"\>home:2\</span\>\<span\ class=\"dim\"\>\]\</span\>\ Title\ Two\</
 
   [[ !  "${output}"   =~ Title${_S}Two    ]]
 
-  run "${_NB}" browse --query "abcde" --print --per-page 2 --page 3
+  run "${_NB}" browse --query "abcde" --print --limit 2 --page 3
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"

@@ -3,6 +3,298 @@
 
 load test_helper
 
+# --quiet #####################################################################
+
+@test "'add --quiet' creates new note without printing output." {
+  {
+    "${_NB}" init
+
+    "${_NB}" notebooks add "Example Notebook"
+  }
+
+  run "${_NB}" Example\ Notebook:+  \
+    --title     "Example Title"     \
+    --filename  "File One.md"       \
+    --quiet
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  # Returns status 0:
+
+  [[ "${status}" -eq 0                              ]]
+
+  # Prints output:
+
+  [[ -z "${output:-}" ]]
+
+  # Creates a new file:
+
+  [[ !  -f "${NB_DIR}/home/File One.md"             ]]
+  [[    -f "${NB_DIR}/Example Notebook/File One.md" ]]
+
+  diff                                              \
+    <(cat "${NB_DIR}/Example Notebook/File One.md") \
+    <(cat <<HEREDOC
+# Example Title
+
+# mock_editor ${NB_DIR}/Example Notebook/File One
+HEREDOC
+)
+
+  # Creates git commit:
+
+  cd "${NB_DIR}/Example Notebook" || return 1
+  printf "\$(git log): '%s'\n" "$(git log)"
+  while [[ -n "$(git status --porcelain)"           ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+
+# encoding ####################################################################
+
+@test "'add --filename <filename>' with non-ASCII decomposed filename normalizes it to precomposed format." {
+  {
+    "${_NB}" init
+  }
+
+  # NOTE: filename is in decomposed format for normalization testing.
+  run "${_NB}" add          \
+        --content   "#тест" \
+        --filename  "тестовый.md"
+
+  printf "\${status}:     '%s'\\n" "${status}"
+  printf "\${output}:     '%s'\\n" "${output}"
+  printf "\${#lines[@]}:  '%s'\\n" "${#lines[@]}"
+
+  [[    "${status}"     -eq 0 ]]
+
+  [[    "${#lines[@]}"  -eq 1                                   ]]
+  [[    "${lines[0]}"   =~  Added:\ .*[.*1.*].*\ .*тестовый.md  ]]
+
+  [[ -f "${NB_DIR}/home/тестовый.md"      ]]
+
+  diff                                    \
+    <(cat "${NB_DIR}/home/тестовый.md")   \
+    <(cat <<HEREDOC
+#тест
+HEREDOC
+)
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+# extension setting ###########################################################
+
+@test "'add' extension set to .adoc creates AsciiDoc file with formatted title." {
+  {
+    "${_NB}" init
+
+    "${_NB}" set default_extension "adoc"
+  }
+
+  run "${_NB}" add --content "Example content." --title "Example Title"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0                          ]]
+
+  [[ -f "${NB_DIR}/home/example_title.adoc"     ]]
+
+  diff                                          \
+    <(cat "${NB_DIR}/home/example_title.adoc")  \
+    <(cat <<HEREDOC
+= Example Title
+
+Example content.
+HEREDOC
+)
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+@test "'add' extension set to .asciidoc creates AsciiDoc file with formatted title." {
+  {
+    "${_NB}" init
+
+    "${_NB}" set default_extension "asciidoc"
+  }
+
+  run "${_NB}" add --content "Example content." --title "Example Title"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0                              ]]
+
+  [[ -f "${NB_DIR}/home/example_title.asciidoc"     ]]
+
+  diff                                              \
+    <(cat "${NB_DIR}/home/example_title.asciidoc")  \
+    <(cat <<HEREDOC
+= Example Title
+
+Example content.
+HEREDOC
+)
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+@test "'add' extension set to .md creates Markdown file with formatted title." {
+  {
+    "${_NB}" init
+
+    "${_NB}" set default_extension "md"
+  }
+
+  run "${_NB}" add --content "Example content." --title "Example Title"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0                        ]]
+
+  [[ -f "${NB_DIR}/home/example_title.md"     ]]
+
+  diff                                        \
+    <(cat "${NB_DIR}/home/example_title.md")  \
+    <(cat <<HEREDOC
+# Example Title
+
+Example content.
+HEREDOC
+)
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+@test "'add' extension set to .org creates AsciiDoc file with formatted title." {
+  {
+    "${_NB}" init
+
+    "${_NB}" set default_extension "org"
+  }
+
+  run "${_NB}" add --content "Example content." --title "Example Title"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0                          ]]
+
+  [[ -f "${NB_DIR}/home/example_title.org"      ]]
+
+  diff                                          \
+    <(cat "${NB_DIR}/home/example_title.org")   \
+    <(cat <<HEREDOC
+#+TITLE: Example Title
+
+Example content.
+HEREDOC
+)
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+# option parsing ##############################################################
+
+@test "'add --content' with content containing a leading dash (-) successfully creates note." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" add                                    \
+    --content   "-Example content with leading dash." \
+    --filename  "Example Filename.org"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0                        ]]
+
+  [[ -f "${NB_DIR}/home/Example Filename.org" ]]
+
+  diff                                            \
+    <(cat "${NB_DIR}/home/Example Filename.org")  \
+    <(echo "-Example content with leading dash.")
+
+# mock_editor %s/home/Example File\\n" "${NB_DIR}")
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+@test "'add' with content containing a leading dash (-) successfully creates note." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" add                        \
+    "-Example content with leading dash." \
+    --filename  "Example Filename.org"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0                        ]]
+
+  [[ -f "${NB_DIR}/home/Example Filename.org" ]]
+
+  diff                                            \
+    <(cat "${NB_DIR}/home/Example Filename.org")  \
+    <(echo "-Example content with leading dash.")
+
+# mock_editor %s/home/Example File\\n" "${NB_DIR}")
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
 # aliases ####################################################################
 
 @test "'<notebook>:+' creates new note with editor." {
@@ -285,26 +577,26 @@ HEREDOC
   [[    "${output}"  =~  ❯.*nb.*\ .*·.*\ .*home.*\ .*:.*\ .*1 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1><a rel=\"noopener noreferrer\" href=\"//lo"
+"<nav class=\"header-crumbs\"><strong><a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/?--per-page=.*&--columns=.*\"><span class=\"dim\">❯</span>nb</a>"
+"calhost:6789/?--columns=.*&--limit=.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-" <span class=\"dim\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
+" <span class=\"muted\">·</span> <a rel=\"noopener noreferrer\" href=\"//lo"
 
   printf "%s\\n" "${output}" | grep -q \
-"calhost:6789/home:?--per-page=.*&--columns=.*\">home</a>"
+"calhost:6789/home:?--columns=.*&--limit=.*\">home</a>"
 
   printf "%s\\n" "${output}" | grep -q "rows=\".*\">"
 
   printf "%s\\n" "${output}" | grep -q \
-"action=\"/home:Example%20Folder/Example%20File.md?--add&--per-page=.*&--columns=.*\""
+"action=\"/home:Example%20Folder/Example%20File.md?--add&--columns=.*&--limit=.*\""
 
   printf "%s\\n" "${output}" | grep -q \
 "value=\"add\">"
 
-  printf "%s\\n" "${output}" | grep -q \
+  printf "%s\\n" "${output}" | rg --multiline -q \
 "rows=\".*\"># Example Title${_NEWLINE}${_NEWLINE}#tag1 #tag2${_NEWLINE}${_NEWLINE}Example content.${_NEWLINE}</textarea>"
 
   printf "%s\\n" "${output}" | grep -q -v \
@@ -312,6 +604,96 @@ HEREDOC
 }
 
 # --title option ##############################################################
+
+@test "'add --title' with .adoc file creates file with AsciiDoc title." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" add --title "Example Title" --filename "Example File.adoc"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0      ]]
+
+  [[ -f "${NB_DIR}/home/Example File.adoc" ]]
+
+  diff                                        \
+    <(cat "${NB_DIR}/home/Example File.adoc") \
+    <(printf "\
+= Example Title
+
+# mock_editor %s/home/Example File\\n" "${NB_DIR}")
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+@test "'add --title' with .asciidoc file creates file with AsciiDoc title." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" add --title "Example Title" --filename "Example File.asciidoc"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0  ]]
+
+  [[ -f "${NB_DIR}/home/Example File.asciidoc"    ]]
+
+  diff                                            \
+    <(cat "${NB_DIR}/home/Example File.asciidoc") \
+    <(printf "\
+= Example Title
+
+# mock_editor %s/home/Example File\\n" "${NB_DIR}")
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
+
+@test "'add --title' with .adocx123 file (partially matching non-recognized extension) creates file with default markdown title." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" add --title "Example Title" --filename "Example File.adocx"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0      ]]
+
+  [[ -f "${NB_DIR}/home/Example File.adocx"     ]]
+
+  diff                                          \
+    <(cat "${NB_DIR}/home/Example File.adocx")  \
+    <(printf "\
+# Example Title
+
+# mock_editor %s/home/Example File\\n" "${NB_DIR}")
+
+  cd "${NB_DIR}/home"
+
+  while [[ -n "$(git status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git log | grep -q '\[nb\] Add'
+}
 
 @test "'add --title' with .org file creates file with .org title." {
   {
@@ -343,13 +725,13 @@ HEREDOC
   git log | grep -q '\[nb\] Add'
 }
 
-@test "'add' with --title option exits with 0, creates new note with \$EDITOR, creates commit." {
+@test "'add --title <title>' exits with 0, creates new note with \$EDITOR, creates commit." {
   {
     "${_NB}" init
   }
 
   run "${_NB}" add \
-    --title "Example Title: A*string•with/a\\bunch|of?invalid<filename\"characters>"
+    --title " [ ] Example Title: A*string•with/a\\bunch|of?invalid<filename\"characters>"
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -373,7 +755,7 @@ HEREDOC
   diff                                    \
     <(cat "${NB_DIR}/home/${_files[0]}")  \
     <(printf "\
-# Example Title: A*string•with/a\\\\bunch|of?invalid<filename\"characters>
+#  [ ] Example Title: A*string•with/a\\\\bunch|of?invalid<filename\"characters>
 
 # mock_editor %s/home/%s\\n" "${NB_DIR}" "${_files[0]%.md}")
 
@@ -410,8 +792,8 @@ HEREDOC
     "${_NB}" init
   }
 
-  run "${_NB}" add                                                                    \
-    --title "Example Title: A*string•with/a\\bunch|of?invalid<filename\"characters>"  \
+  run "${_NB}" add                                                                          \
+    --title   " [ ] Example Title: A*string•with/a\\bunch|of?invalid<filename\"characters>" \
     --content "Example: content."
 
   printf "\${status}: '%s'\\n" "${status}"
@@ -436,7 +818,7 @@ HEREDOC
   diff                                    \
     <(cat "${NB_DIR}/home/${_files[0]}")  \
     <(printf "\
-# Example Title: A*string•with/a\\\\bunch|of?invalid<filename\"characters>
+#  [ ] Example Title: A*string•with/a\\\\bunch|of?invalid<filename\"characters>
 
 Example: content.\\n")
 
@@ -1982,7 +2364,7 @@ HEREDOC
   cd "${NB_DIR}/home" || return 1
 
   [[ -n "$(ls example.org)" ]]
-  ! grep -q '# mock_editor' "${NB_DIR}/home"/*
+  run ! grep -q '# mock_editor' "${NB_DIR}/home"/*
   grep -q 'sample.md' "${NB_DIR}/home"/*
 
   while [[ -n "$(git status --porcelain)" ]]

@@ -67,7 +67,7 @@ _setup_notebooks() {
   printf "\${output}: '%s'\\n" "${output}"
   _compare "'NB_NOTEBOOK_PATH=${NB_DIR}/home'" "'${lines[2]}'"
 
-  [[ "${lines[2]}" == "NB_NOTEBOOK_PATH=${NB_DIR}/home" ]]
+  [[ "${output}" =~ NB_NOTEBOOK_PATH=${NB_DIR}/home   ]]
 }
 
 @test "'notebooks use <invalid>' exits with 1 and prints error message." {
@@ -92,7 +92,7 @@ _setup_notebooks() {
   printf "\${output}: '%s'\\n" "${output}"
   _compare "'NB_NOTEBOOK_PATH=${NB_DIR}/home'" "'${lines[2]}'"
 
-  [[ "${lines[2]}" == "NB_NOTEBOOK_PATH=${NB_DIR}/home" ]]
+  [[ "${output}" =~ NB_NOTEBOOK_PATH=${NB_DIR}/home ]]
 }
 
 @test "'notebooks use <name>' exits with 0 and sets <name> in .current." {
@@ -116,7 +116,7 @@ _setup_notebooks() {
   printf "\${output}: '%s'\\n" "${output}"
   _compare "'NB_NOTEBOOK_PATH=${NB_DIR}/one'" "'${lines[2]}'"
 
-  [[ "${lines[2]}" == "NB_NOTEBOOK_PATH=${NB_DIR}/one" ]]
+  [[ "${output}" =~ NB_NOTEBOOK_PATH=${NB_DIR}/one ]]
 }
 
 @test "'notebooks use <name>:' exits with 0 and sets <name> in .current." {
@@ -141,7 +141,40 @@ _setup_notebooks() {
   printf "\${output}: '%s'\\n" "${output}"
   _compare "'NB_NOTEBOOK_PATH=${NB_DIR}/one'" "'${lines[2]}'"
 
-  [[ "${lines[2]}" == "NB_NOTEBOOK_PATH=${NB_DIR}/one" ]]
+  [[ "${output}" =~ NB_NOTEBOOK_PATH=${NB_DIR}/one ]]
+}
+
+@test "'notebooks use <name>:' exits with 0, sets the current notebook, and loads local .nbrc." {
+  {
+    _setup_notebooks
+
+    touch "${NB_DIR}/one/.nbrc"
+
+    cat <<HEREDOC > "${NB_DIR}/one/.nbrc"
+NB_DEFAULT_EXTENSION="adoc"
+HEREDOC
+  }
+
+  run "${_NB}" notebooks use one:
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+  _compare "'Now using: $(_color_primary 'one')'" "'${output}'"
+
+  [[ ${status} -eq 0                        ]]
+  [[ "${output}" =~ Now\ using:             ]]
+  [[ "${output}" =~ one                     ]]
+  [[ "$(cat "${NB_DIR}/.current")" == "one" ]]
+
+  run "${_NB}" env
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+  _compare "'NB_NOTEBOOK_PATH=${NB_DIR}/one'" "'${lines[2]}'"
+  _compare "'NB_DEFAULT_EXTENSION=adoc'"      "'${lines[8]}'"
+
+  [[ "${output}" =~ NB_NOTEBOOK_PATH=${NB_DIR}/one  ]]
+  [[ "${output}" =~ "NB_DEFAULT_EXTENSION=adoc"      ]]
 }
 
 @test "'notebooks use' in local exits with 1 and prints error message." {
@@ -172,5 +205,5 @@ _setup_notebooks() {
   _compare "'NB_NOTEBOOK_PATH=${_TMP_DIR}/example'" "'${lines[2]}'"
   [[ "$(cat "${NB_DIR}/.current")" == "home" ]]
 
-  [[ "${lines[2]}" == "NB_NOTEBOOK_PATH=${_TMP_DIR}/example" ]]
+  [[ "${output}" =~ NB_NOTEBOOK_PATH=${_TMP_DIR}/example ]]
 }

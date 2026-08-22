@@ -2,9 +2,71 @@
 
 load test_helper
 
-export _IMOGI="🌄"
-export _S=" "
-export NB_SERVER_PORT=6789
+@test "'browse <selector>' processes markdown with \$NB_BROWSE_MARKDOWN_READER value." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "File One.md"       \
+      --title     "Root Title One"    \
+      --content   "$(<<HEREDOC cat
+Example line one
+Example line two
+
+Example line four
+:smile:
+HEREDOC
+)"
+
+    sleep 1
+  }
+
+  run "${_NB}" browse 1 --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0 ]]
+
+  diff                                                                  \
+    <(printf "%s\\n" "${output}" | sed -ne '/<div class="main">/,$ p')  \
+    <(cat <<HEREDOC
+<div class="main">
+
+<h1 id="root-title-one">Root Title One</h1>
+<p>Example line one
+Example line two</p>
+<p>Example line four
+<span class="emoji" data-emoji="smile">😄</span></p>
+</div>
+</body>
+</html>
+HEREDOC
+)
+
+  NB_BROWSE_MARKDOWN_READER="markdown+hard_line_breaks-emoji" run "${_NB}" browse 1 --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}" -eq 0 ]]
+
+  diff                                                                  \
+    <(printf "%s\\n" "${output}" | sed -ne '/<div class="main">/,$ p')  \
+    <(cat <<HEREDOC
+<div class="main">
+
+<h1 id="root-title-one">Root Title One</h1>
+<p>Example line one<br />
+Example line two</p>
+<p>Example line four<br />
+:smile:</p>
+</div>
+</body>
+</html>
+HEREDOC
+)
+
+}
 
 # response handling ###########################################################
 
@@ -39,6 +101,40 @@ export NB_SERVER_PORT=6789
 "<h1 id=\"example-title\">Example Title</h1>"
 }
 
+@test "'browse' responds to request with selector containing non-ascii characters." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "Example File.md"     \
+      --title     "Example Noté Title"  \
+      --content   "Example noté content."
+
+    (ncat                               \
+      --exec "${_NB} browse --respond"  \
+      --listen                          \
+      --source-port "6789"              \
+      2>/dev/null) &
+
+    sleep 1
+  }
+
+  run curl -sS -D - "http://localhost:6789/home:Example%20Noté%20Title"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    ==  0                   ]]
+  [[ "${output}"    =~  \<\!DOCTYPE\ html\> ]]
+
+  [[ "${output}"    =~  header\-crumbs.*↓   ]]
+
+  printf "%s\\n" "${output}" | grep -q \
+"<h1 id=\"example-noté-title\">Example Noté Title</h1>"
+
+  printf "%s\\n" "${output}" | grep -q \
+"<p>Example noté content.</p>"
+}
+
 # todos #######################################################################
 
 @test "'browse <id>' with todo item displays marked-up done / closed checkbox." {
@@ -58,13 +154,13 @@ export NB_SERVER_PORT=6789
   [[    "${status}"    ==  0                                                        ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                      ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                   ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                         ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>  ]]
 
   [[    "${output}"    =~  \
-\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>x\</span\>           ]]
+\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>x\</span\>           ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>x\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>        ]]
+\<span\ class=\"identifier\"\>x\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>        ]]
 }
 
 @test "'browse <id>' with todo item displays marked-up undone / open checkbox (space)." {
@@ -84,13 +180,13 @@ export NB_SERVER_PORT=6789
   [[    "${status}"    ==  0                                                        ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                      ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                   ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                         ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>  ]]
 
   [[    "${output}"    =~  \
-\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>       ]]
+\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>    ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>    ]]
+\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>  ]]
 }
 
 @test "'browse <id>' with todo item displays marked-up undone / open checkbox (no space)." {
@@ -110,13 +206,13 @@ export NB_SERVER_PORT=6789
   [[    "${status}"    ==  0                                                        ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                      ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                   ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                         ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>  ]]
 
   [[    "${output}"    =~  \
-\<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>       ]]
+\<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>    ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>    ]]
+\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>  ]]
 }
 
 # pdf items ###################################################################
@@ -128,7 +224,7 @@ export NB_SERVER_PORT=6789
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     declare _filename="example.pdf"
 
@@ -148,7 +244,7 @@ export NB_SERVER_PORT=6789
   [[    "${status}"    ==  0                                                          ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                        ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                     ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                           ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>    ]]
 
   [[    "${output}"    =~  \
@@ -181,7 +277,7 @@ export NB_SERVER_PORT=6789
   [[    "${status}"    ==  0                                                          ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                        ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                     ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                           ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>    ]]
 
   [[    "${output}"    =~  \
@@ -202,7 +298,7 @@ export NB_SERVER_PORT=6789
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     declare _filename="nb.mp3"
 
@@ -211,18 +307,23 @@ export NB_SERVER_PORT=6789
     declare _raw_url_pattern="//localhost:6789/--original/local/${_filename}"
     _raw_url_pattern+="\?--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
 
+    declare _reported_file_type=
+    _reported_file_type="$(file -b --mime-type "${_TMP_DIR}/Local Notebook/nb.mp3")"
+
     sleep 1
   }
 
   run "${_NB}" browse 1 --print
 
-  printf "\${status}: '%s'\\n" "${status}"
-  printf "\${output}: '%s'\\n" "${output}"
+  printf "\${status}:               '%s'\\n" "${status}"
+  printf "\${output}:               '%s'\\n" "${output}"
+  printf "\$(ls):                   '%s'\\n" "$(ls "${_TMP_DIR}/Local Notebook/")"
+  printf "\${_reported_file_type}:  '%s'\\n" "${_reported_file_type}"
 
   [[    "${status}"    ==  0                                                        ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                      ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                   ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                         ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>  ]]
 
   [[    "${output}"    =~  \
@@ -261,7 +362,7 @@ type=\"audio/mpeg\"\>${_NEWLINE}.*\</audio\>${_NEWLINE}.*\</div\>               
   [[    "${status}"    ==  0                                                        ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                      ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                   ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                         ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>  ]]
 
   [[    "${output}"    =~  \
@@ -288,7 +389,7 @@ type=\"audio/mpeg\"\>${_NEWLINE}.*\</audio\>${_NEWLINE}.*\</div\>               
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     declare _filename="nb.mp4"
 
@@ -308,7 +409,7 @@ type=\"audio/mpeg\"\>${_NEWLINE}.*\</audio\>${_NEWLINE}.*\</div\>               
   [[    "${status}"    ==  0                                                        ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                      ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                   ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                         ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>  ]]
 
   [[    "${output}"    =~  \
@@ -347,7 +448,7 @@ type=\"video/mp4\"\>${_NEWLINE}.*\</video\>${_NEWLINE}.*\</div\>                
   [[    "${status}"    ==  0                                                        ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                      ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                   ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                         ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>  ]]
 
   [[    "${output}"    =~  \
@@ -374,7 +475,7 @@ type=\"video/mp4\"\>${_NEWLINE}.*\</video\>${_NEWLINE}.*\</div\>                
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add  "Example Folder/Sample Folder/Example File.md"          \
       --content "Example content."
@@ -465,7 +566,7 @@ type=\"video/mp4\"\>${_NEWLINE}.*\</video\>${_NEWLINE}.*\</div\>                
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add                    \
       --filename  "Example File.md" \
@@ -504,7 +605,7 @@ HEREDOC
   [[    "${status}"    ==  0                                                      ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                    ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                 ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                       ]]
   [[    "${output}"    =~  \
 \<p\>Example\ \<img\ src=\"${_raw_url_pattern_one}\"\ \/\>\ content\              ]]
   [[    "${output}"    =~  \
@@ -553,7 +654,7 @@ HEREDOC
   [[    "${status}"    ==  0                                                      ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                    ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                 ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                       ]]
   [[    "${output}"    =~  \
 \<p\>Example\ \<img\ src=\"${_raw_url_pattern_one}\"\ \/\>\ content\              ]]
   [[    "${output}"    =~  \
@@ -573,7 +674,7 @@ HEREDOC
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" import "${NB_TEST_BASE_PATH}/fixtures/nb.png"
 
@@ -591,7 +692,7 @@ HEREDOC
   [[    "${status}"    ==  0                                                          ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                        ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                     ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                           ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>    ]]
 
   [[    "${output}"    =~  \
@@ -621,7 +722,7 @@ ${_raw_url_pattern}\"\>${_NEWLINE}.*\<img\ src=\"${_raw_url_pattern}\"\         
   [[    "${status}"    ==  0                                                          ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                                        ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>                     ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>                           ]]
   [[    "${output}"    =~  \</span\>\ \<a.*\ href=\"${_raw_url_pattern}\"\>↓\</a\>    ]]
 
   [[    "${output}"    =~  \
@@ -665,7 +766,7 @@ HEREDOC
   [[    "${status}"    ==  0                                            ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                          ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>       ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>             ]]
   [[    "${output}"    =~  \
 \<p\>Example\ image\ one:\ \<img\ src=\".*not-valid-1.png\"\ alt=\"Example\ Image\ One\"\ /\>\</p\> ]]
   [[    "${output}"    =~  \<p\>More\ example\ \ content\ \ here.\</p\> ]]
@@ -702,7 +803,7 @@ HEREDOC
   [[    "${status}"    ==  0                                            ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                          ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>       ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>             ]]
   [[    "${output}"    =~  \
 \<p\>Example\ image\ one:\ \<img\ src=\".*not-valid-1.png\"\ alt=\"Example\ Image\ One\"\ /\>\</p\> ]]
   [[    "${output}"    =~  \<p\>More\ example\ \ content\ \ here.\</p\> ]]
@@ -739,7 +840,7 @@ HEREDOC
   [[    "${status}"    ==  0                                      ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                    ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\> ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>       ]]
   [[    "${output}"    =~  \
 \<p\>Example\ image\ one:\ \<img\ src=\".*not-valid-1.png\"\ alt=\"Example\ Image\ One\"\ /\>\</p\> ]]
   [[    "${output}"    =~  \
@@ -758,7 +859,7 @@ HEREDOC
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add  "Example File.md"             \
       --title     "Example Title"               \
@@ -770,7 +871,7 @@ HEREDOC
 
     sleep 1
 
-    declare _expected_params="?--per-page=.*&--columns=.*&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
+    declare _expected_params="?--columns=.*&--limit=.*&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
   }
 
   run "${_NB}" browse 2/1 --print
@@ -824,13 +925,13 @@ HEREDOC
 "<p>Example PDF File"
 
   printf "%s\\n" "${output}" | grep -q \
-"<a.* href=\"//localhost:6789/home:1?--per-page=.*&--columns=.*\">\[\[home:1\]\]</a>"
+"<a.* href=\"//localhost:6789/home:1?--columns=.*&--limit=.*\">\[\[home:1\]\]</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<a.* href=\"//localhost:6789/home:1?--per-page=.*&--columns=.*&--query=%23tag1\">\#tag1</a>"
+"<a.* href=\"//localhost:6789/home:?--columns=.*&--limit=.*&--query=%23tag1\">\#tag1</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<a.* href=\"//localhost:6789/home:1?--per-page=.*&--columns=.*&--query=%23tag2\">\#tag2</a>"
+"<a.* href=\"//localhost:6789/home:?--columns=.*&--limit=.*&--query=%23tag2\">\#tag2</a>"
 }
 
 # nb --browse / nb -b #########################################################
@@ -862,7 +963,7 @@ HEREDOC
 "<h1 id=\"title-one\">Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--per-page=.*&--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
@@ -895,7 +996,7 @@ HEREDOC
 "<h1 id=\"title-one\">Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--per-page=.*&--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
@@ -930,10 +1031,10 @@ HEREDOC
 "<h1 id=\"title-one\">Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<a.* href=\"//localhost:6789/?--per-page.*&--columns.*\"><span class=\"dim\">❯</span>nb</a>"
+"<a.* href=\"//localhost:6789/?--columns.*&--limit.*\"><span class=\"muted\">❯</span>nb</a>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--per-page=.*&--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
@@ -958,7 +1059,7 @@ HEREDOC
   [[    "${status}"    ==  0                                            ]]
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>                          ]]
 
-  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>       ]]
+  [[    "${output}"    =~  \<nav\ class=\"header-crumbs\"\>             ]]
 
   [[    "${output}"    =~  pre\ \>\ code.sourceCode                     ]]
 
@@ -990,13 +1091,13 @@ HEREDOC
   [[ "${status}"    ==  0                                       ]]
   [[ "${output}"    =~  \<\!DOCTYPE\ html\>                     ]]
 
-  [[ "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>  ]]
+  [[ "${output}"    =~  \<nav\ class=\"header-crumbs\"\>        ]]
 
   printf "%s\\n" "${output}" | grep -q \
-'<a.* href="//localhost:6789/?--per-page=.*"><span class="dim">❯</span>nb</a>'
+'<a.* href="//localhost:6789/?--columns=.*&--limit=.*"><span class="muted">❯</span>nb</a>'
 
   printf "%s\\n" "${output}" | grep -q \
-'<span class="dim">·</span> <a.* href="//localhost:6789/home:?--per-page=.*">home</a\>'
+'<span class="muted">·</span> <a.* href="//localhost:6789/home:?--columns=.*&--limit=.*">home</a\>'
 
   [[ "${output}"    =~  \<div\ class=\"sourceCode\"             ]]
   [[ "${output}"    =~  \<pre\ class=\"sourceCode\ bash\"\>     ]]
@@ -1020,14 +1121,14 @@ HEREDOC
   [[ "${status}"    ==  0                                       ]]
   [[ "${output}"    =~  \<\!DOCTYPE\ html\>                     ]]
 
-  [[ "${output}"    =~  \<nav\ class=\"header-crumbs\"\>\<h1\>  ]]
+  [[ "${output}"    =~  \<nav\ class=\"header-crumbs\"\>        ]]
   [[ "${output}"    =~  header-crumbs.*↓                        ]]
 
   printf "%s\\n" "${output}" | grep -q \
-'<a.* href="//localhost:6789/?--per-page=.*"><span class="dim">❯</span>nb</a>'
+'<a.* href="//localhost:6789/?--columns=.*&--limit=.*"><span class="muted">❯</span>nb</a>'
 
   printf "%s\\n" "${output}" | grep -q \
-'<span class="dim">·</span> <a.* href="//localhost:6789/home:?--per-page=.*">home</a\>'
+'<span class="muted">·</span> <a.* href="//localhost:6789/home:?--columns=.*&--limit=.*">home</a\>'
 
   [[ "${output}"    =~  \<div\ class=\"sourceCode\"             ]]
   [[ "${output}"    =~  \<pre\ class=\"sourceCode\ js\"\>       ]]
@@ -1065,6 +1166,7 @@ HEREDOC
   [[ "${status}"    ==  0                   ]]
   [[ "${output}"    =~  \<\!DOCTYPE\ html\> ]]
 
+  pandoc --from odt --to html "${NB_DIR}/home/Example Folder/File One.odt"
 
   [[ "${output}"    =~  header-crumbs.*↓    ]]
 
@@ -1072,7 +1174,7 @@ HEREDOC
 "<h1 id=\"title-one\"><span id=\"anchor\"></span>Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--per-page=.*&--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
@@ -1115,10 +1217,61 @@ HEREDOC
 "<h1 id=\"title-one\">Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--per-page=.*&--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
+}
+
+# .asciidoc ###################################################################
+
+@test "'browse' with .asciidoc file serves the rendered HTML page with [[wiki-style links]] resolved to internal web server URLs." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "Example File.md"             \
+      --title     "Example Title"               \
+      --content   "Example content."
+
+    "${_NB}" add  "Example Folder/File One.asciidoc"  \
+      --title     "Title One"                         \
+      --content   "$(cat <<HEREDOC
+= Example AsciiDoc Title
+
+Example content. [[Example Title]]
+HEREDOC
+      )"
+
+    sleep 1
+  }
+
+  run "${_NB}" browse 2/1 --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    ==  0                   ]]
+  [[ "${output}"    =~  \<\!DOCTYPE\ html\> ]]
+
+  [[ "${output}"    =~  header-crumbs.*↓    ]]
+
+  # TODO: .org / org mode titles in pandoc HTML output?
+  # [[ "${output}"    =~  \<h1\ id=\"title-one\"\>Title\ One\</h1\>                     ]]
+
+  printf "%s\\n" "${output}" | grep -q \
+"<nav class=\"header-crumbs\">"
+
+  printf "%s\\n" "${output}" | grep -q \
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
+
+  printf "%s\\n" "${output}" | grep -q \
+"\[\[Example Title\]\]</a></p>"
+
+  printf "%s\\n" "${output}" | grep -q \
+"<h1 .*>Example AsciiDoc Title</h1>"
+
+  printf "%s\\n" "${output}" | grep -q -v \
+"<p>= Example AsciiDoc Title</p>"
 }
 
 # .org ########################################################################
@@ -1152,10 +1305,10 @@ HEREDOC
   # [[ "${output}"    =~  \<h1\ id=\"title-one\"\>Title\ One\</h1\>                     ]]
 
   printf "%s\\n" "${output}" | grep -q \
-"<nav class=\"header-crumbs\"><h1>"
+"<nav class=\"header-crumbs\">"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:1?--per-page=.*&amp;--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:1?--columns=.*&amp;--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
@@ -1192,7 +1345,7 @@ HEREDOC
 "<h1 id=\"title-one\">Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--per-page=.*&--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
@@ -1225,7 +1378,7 @@ HEREDOC
 "<h1 id=\"title-one\">Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q \
-"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--per-page=.*&--columns=.*\">"
+"<p>Example content. <a.* href=\"//localhost:6789/home:Example Title?--columns=.*&--limit=.*\">"
 
   printf "%s\\n" "${output}" | grep -q \
 "\[\[Example Title\]\]</a></p>"
@@ -1272,13 +1425,13 @@ HEREDOC
   [[ "${status}" -eq 0 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-'one: <a.* href="//localhost:6789/home:Root Title Two?--per-page.*&--columns=.*">\[\[Root Title Two\]\]</a>'
+'one: <a.* href="//localhost:6789/home:Root Title Two?--columns=.*&--limit.*">\[\[Root Title Two\]\]</a>'
 
   printf "%s\\n" "${output}" | grep -q \
-'example <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--per-page.*&--columns=.*">\[\[Example Notebook:Example Folder/1\]\]</a> content'
+'example <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--columns=.*&--limit.*">\[\[Example Notebook:Example Folder/1\]\]</a> content'
 
   printf "%s\\n" "${output}" | grep -q \
-'content <a.* href="//localhost:6789/home:3/1?--per-page.*&--columns=.*">\[\[3/1\]\]</a> here'
+'content <a.* href="//localhost:6789/home:3/1?--columns=.*&--limit.*">\[\[3/1\]\]</a> here'
 }
 
 @test "'browse <item-selector>' properly resolves titled [[wiki-style links]] and skips links with non-resolving selectors." {
@@ -1322,13 +1475,13 @@ HEREDOC
   [[ "${status}" -eq 0 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-'one: <a.* href="//localhost:6789/home:Root Title Two?--per-page.*&--columns=.*">\[\[Root Title Two\]\]</a>'
+'one: <a.* href="//localhost:6789/home:Root Title Two?--columns=.*&--limit.*">\[\[Root Title Two\]\]</a>'
 
   printf "%s\\n" "${output}" | grep -q \
-'example <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--per-page.*&--columns=.*">\[\[Example Notebook:Example Folder/1\]\]</a> content'
+'example <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--columns=.*&--limit.*">\[\[Example Notebook:Example Folder/1\]\]</a> content'
 
   printf "%s\\n" "${output}" | grep -q \
-'content <a.* href="//localhost:6789/home:2/1?--per-page.*&--columns=.*">\[\[2/1\]\]</a> here'
+'content <a.* href="//localhost:6789/home:2/1?--columns=.*&--limit.*">\[\[2/1\]\]</a> here'
 }
 
 @test "'browse <selector>' properly resolves duplicated [[wiki-style links]] in HTML." {
@@ -1361,11 +1514,11 @@ HEREDOC
   [[ "${status}" -eq 0 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-'link one: <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--per-page.*&--columns=.*">\[\[Example Notebook:Example Folder/1\]\]</a>'
+'link one: <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--columns=.*&--limit.*">\[\[Example Notebook:Example Folder/1\]\]</a>'
 
 
   printf "%s\\n" "${output}" | grep -q -v\
-'example <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--per-page.*&--columns=.*">\[\[Example Notebook:Example Folder/1\]\]</a>'
+'example <a.* href="//localhost:6789/Example Notebook:Example Folder/1?--columns=.*&--limit.*">\[\[Example Notebook:Example Folder/1\]\]</a>'
 }
 
 @test "'browse <selector>' resolves [[wiki-style links]] in a different arrangement in HTML." {
@@ -1422,11 +1575,11 @@ HEREDOC
   [[ "${status}" -eq 0 ]]
 
   printf "%s\\n" "${output}" | grep -q \
-'<a.* href="//localhost:6789/home:Sample Folder/Nested Title One?--per-page.*&--columns=.*">\[\[Sample Folder/Nested Title One\]\]</a>'
+'<a.* href="//localhost:6789/home:Sample Folder/Nested Title One?--columns=.*&--limit.*">\[\[Sample Folder/Nested Title One\]\]</a>'
 
   printf "%s\\n" "${output}" | grep -q \
-'<a.* href="//localhost:6789/Example Notebook:File Two.md?--per-page.*&--columns=.*">\[\[Example Notebook:File Two.md\]\]</a>'
+'<a.* href="//localhost:6789/Example Notebook:File Two.md?--columns=.*&--limit.*">\[\[Example Notebook:File Two.md\]\]</a>'
 
   printf "%s\\n" "${output}" | grep -q \
-'<a.* href="//localhost:6789/Example Notebook:Example Folder/1?--per-page.*&--columns=.*">\[\[Example Notebook:Example Folder/1\]\]</a>'
+'<a.* href="//localhost:6789/Example Notebook:Example Folder/1?--columns=.*&--limit.*">\[\[Example Notebook:Example Folder/1\]\]</a>'
 }

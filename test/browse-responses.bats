@@ -2,8 +2,6 @@
 
 load test_helper
 
-export NB_SERVER_PORT=6789
-
 # --local #####################################################################
 
 @test "'browse local:' with missing --local param responds with 400 Bad Request." {
@@ -13,7 +11,7 @@ export NB_SERVER_PORT=6789
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add  "Example File.md"     \
       --title     "Example Title"       \
@@ -87,6 +85,27 @@ export NB_SERVER_PORT=6789
   }
 
   run "${_NB}" browse no-matching-selector --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq 0                      ]]
+
+  [[    "${output}"  =~  html                   ]]
+  [[    "${output}"  =~  \<title\>nb\</title\>  ]]
+  [[    "${output}"  =~  \404\ Not\ Found       ]]
+}
+
+@test "'browse' renders 404 when notebook is not found and id matches item in current notebook." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add "Example File.md" --content "Example content."
+
+    sleep 1
+  }
+
+  run "${_NB}" browse example:1 --print
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"

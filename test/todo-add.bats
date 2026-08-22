@@ -3,16 +3,20 @@
 
 load test_helper
 
-# `add todo` ##################################################################
+# templates ###################################################################
 
-@test "'add todo <title> --related <URL> --related <selector> --tag <tag>' exits with 0, creates new todo with <title> as title, related items, and tag, creates commit." {
+@test "'add todo <title>' with assigned \$NB_DEFAULT_TEMPLATE skips the template and creates new todo." {
   {
     "${_NB}" init
+
+    export NB_DEFAULT_TEMPLATE="Example template with no template tags."
   }
 
   run "${_NB}" add todo "Example todo title." \
     --related "http://example.com"            \
     --related "example:123"                   \
+    --related "[[sample:456]]"                \
+    --related "Example Title"                 \
     --tag     tag1
 
   printf "\${status}: '%s'\\n" "${status}"
@@ -40,6 +44,102 @@ Added:\ .*\[.*1.*\].*\ ✔️\ \ .*[0-9]+\.todo\.md.*\ \".*\[\ \].*\ Example\ to
 
 - <http://example.com>
 - [[example:123]]
+- [[sample:456]]
+- [[Example Title]]
+
+## Tags
+
+#tag1
+HEREDOC
+)
+
+  while [[ -n "$(git -C "${NB_DIR}/home" status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git -C "${NB_DIR}/home" log | grep -q '\[nb\] Add'
+}
+
+# edge cases ##################################################################
+
+@test "'todo add check <multi-word> <description>' exits with 0, creates new todo with 'check <multi-word> <description>' as title, creates commit." {
+
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" todo add check example multi-word description.
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"      -eq 0                   ]]
+
+
+  _files=($(ls "${NB_DIR}/home/"))
+
+  printf "\${_files[*]}: '%s'\\n" "${_files[*]:-}"
+
+  [[ "${#_files[@]}"  -eq 1                   ]]
+  [[ "${_files[0]}"   =~  ^[0-9]+\.todo\.md$  ]]
+
+  cat "${NB_DIR}/home/${_files[0]}"
+
+  diff                                        \
+    <(cat "${NB_DIR}/home/${_files[0]}")      \
+    <(printf "# [ ] check example multi-word description.\\n")
+
+  while [[ -n "$(git -C "${NB_DIR}/home" status --porcelain)" ]]
+  do
+    sleep 1
+  done
+  git -C "${NB_DIR}/home" log | grep -q '\[nb\] Add'
+
+  [[ "${output}"      =~  \
+Added:\ .*\[.*1.*\].*\ ✔️\ \ .*[0-9]+\.todo\.md.*\ \".*\[\ \].*\ check\ example\ multi-word\ description\.\"  ]]
+}
+
+# `add todo` ##################################################################
+
+@test "'add todo <title> --related <URL> --related <selector> --tag <tag>' exits with 0, creates new todo with <title> as title, related items, and tag, creates commit." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" add todo "Example todo title." \
+    --related "http://example.com"            \
+    --related "example:123"                   \
+    --related "[[sample:456]]"                \
+    --related "Example Title"                 \
+    --tag     tag1
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"      -eq 0                   ]]
+  [[ "${output}"      =~  \
+Added:\ .*\[.*1.*\].*\ ✔️\ \ .*[0-9]+\.todo\.md.*\ \".*\[\ \].*\ Example\ todo\ title\.\"  ]]
+
+  _files=($(ls "${NB_DIR}/home/"))
+
+  printf "\${_files[*]}: '%s'\\n" "${_files[*]:-}"
+
+  [[ "${#_files[@]}"  -eq 1                   ]]
+  [[ "${_files[0]}"   =~  ^[0-9]+\.todo\.md$  ]]
+
+  cat "${NB_DIR}/home/${_files[0]}"
+
+  diff                                        \
+    <(cat "${NB_DIR}/home/${_files[0]}")      \
+    <(cat <<HEREDOC
+# [ ] Example todo title.
+
+## Related
+
+- <http://example.com>
+- [[example:123]]
+- [[sample:456]]
+- [[Example Title]]
 
 ## Tags
 

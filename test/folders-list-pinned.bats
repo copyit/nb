@@ -2,8 +2,6 @@
 
 load test_helper
 
-export NB_PINNED_PATTERN="#pinned"
-
 # --pinned ####################################################################
 
 @test "'NB_PINNED_PATTERN list --pinned --type' filters by type." {
@@ -176,6 +174,8 @@ export NB_PINNED_PATTERN="#pinned"
     "${_NB}" add  "two.md"      \
       --title     "root three"  \
       --content   "Content three. #pinned"
+
+    sleep 1
 
     "${_NB}" add  "Example Folder/one.md"   \
       --title     "nested one"              \

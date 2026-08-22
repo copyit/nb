@@ -2,7 +2,7 @@
 
 ## Homebrew
 
-Installing via Homebrew with `brew install xwmx/taps/nb` will also
+Installing via Homebrew with `brew install nb` will also
 install the completion scripts.
 
 A one-time setup might be needed to [enable completion for all Homebrew
@@ -16,6 +16,7 @@ you should see a message similar to:
 
 ```bash
 Completion script installed: /usr/local/etc/bash_completion.d/nb
+Completion script installed: /usr/local/share/fish/vendor_completions.d/nb.fish
 Completion script installed: /usr/local/share/zsh/site-functions/_nb
 ```
 
@@ -34,14 +35,17 @@ Completion scripts not found.
 
 > sudo nb completions install
 Completion script installed: /usr/share/bash-completion/completions/nb
+Completion script installed: /usr/local/share/fish/vendor_completions.d/nb.fish
 Completion script installed: /usr/local/share/zsh/site-functions/_nb
 
 > sudo nb completions check
 Exists: /usr/share/bash-completion/completions/nb
+Exists: /usr/local/share/fish/vendor_completions.d/nb.fish
 Exists: /usr/local/share/zsh/site-functions/_nb
 
 > sudo nb completions uninstall
 Completion script removed: /usr/share/bash-completion/completions/nb
+Completion script removed: /usr/local/share/fish/vendor_completions.d/nb.fish
 Completion script removed: /usr/local/share/zsh/site-functions/_nb
 ```
 
@@ -70,7 +74,7 @@ be available.
 Place the completion script in `/etc/bash_completion.d/`:
 
 ```bash
-sudo curl -L https://raw.githubusercontent.com/xwmx/nb/master/etc/nb-completion.bash -o etc/bash_completion.d/nb
+sudo curl -L https://raw.githubusercontent.com/xwmx/nb/master/etc/nb-completion.bash -o /etc/bash_completion.d/nb
 ```
 
 #### macOS

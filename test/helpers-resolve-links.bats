@@ -27,7 +27,7 @@ load test_helper
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     declare _content=
     _content+="Selector link one: [[local:2/1]] • "
@@ -36,6 +36,8 @@ load test_helper
     _content+="Labeled link two: [[Root Title One|Sample label.]] • "
     _content+="Tag one: #tag_1 • "
     _content+="Tag two: #tag-2 • "
+    _content+="Tag three: #tag-3/nested-1 • "
+    _content+="Tag four: #tag-4/nested-2/nested-3 • "
     _content+="Tag not valid: 123#not-valid-tag • "
     _content+="Org mode link: [[http://example.com]] • "
     _content+="Org mode link with description: [[http://example.com][Example Description (more)]] • "
@@ -56,14 +58,14 @@ load test_helper
       --title     "Root Title One"                            \
       --content   "Root content one."
 
-    declare _expected_params="?--per-page=2&--columns=70&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
+    declare _expected_params="?--columns=70&--limit=2&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
   }
 
   run "${_NB}" helpers resolve_links    \
     --browse                            \
     "${_TMP_DIR}/Local Notebook"        \
     --type org                          \
-    --page 123 --per-page 2             \
+    --page 123 --limit 2             \
     --terminal < "${_TMP_DIR}/Local Notebook/Sample Folder/Sample Nested File One.org"
 
   printf "\${status}: '%s'\\n" "${status}"
@@ -88,6 +90,12 @@ load test_helper
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag two: \[\[//localhost:6789/local:${_expected_params}&--query=%23tag-2\]\[#tag-2\]\] •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag three: \[\[//localhost:6789/local:${_expected_params}&--query=%23tag-3\/nested-1\]\[#tag-3\/nested-1\]\] •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag four: \[\[//localhost:6789/local:${_expected_params}&--query=%23tag-4\/nested-2\/nested-3\]\[#tag-4\/nested-2\/nested-3\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag not valid: 123#not-valid-tag •"
@@ -124,7 +132,7 @@ load test_helper
     mkdir -p "${_TMP_DIR}/Local Notebook"
     cd "${_TMP_DIR}/Local Notebook"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     declare _content=
     _content+="Selector link one: [[local:2/1]] • "
@@ -133,6 +141,8 @@ load test_helper
     _content+="Labeled link two: [[Root Title One|Sample label.]] • "
     _content+="Tag one: #tag_1 • "
     _content+="Tag two: #tag-2 • "
+    _content+="Tag three: #tag-3/nested-1 • "
+    _content+="Tag four: #tag-4/nested-2/nested-3 • "
     _content+="Tag not valid: 123#not-valid-tag • "
     _content+="${_NEWLINE}${_NEWLINE}#tag3${_NEWLINE}${_NEWLINE}"
     _content+="#tag4 #tag5 #tag6 #tag7${_NEWLINE}${_NEWLINE}"
@@ -161,19 +171,20 @@ load test_helper
       --from=markdown                   \
       --to=html                         \
       --output="${_html_file_path}"     \
+      --wrap=preserve                   \
       "${_TMP_DIR}/Local Notebook/Sample Folder/Sample Nested File One.md"
 
     [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
 
     printf "\\n#tag8 #tag9\\n" >> "${_html_file_path}"
 
-    declare _expected_params="?--per-page=2&--columns=70&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
+    declare _expected_params="?--columns=70&--limit=2&--local=${_TMP_DIR//$'/'/%2F}%2FLocal%20Notebook"
   }
 
   run "${_NB}" helpers resolve_links    \
     --browse                            \
     "${_TMP_DIR}/Local Notebook"        \
-    --page 123 --per-page 2 --terminal  < "${_html_file_path}"
+    --page 123 --limit 2 --terminal  < "${_html_file_path}"
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -197,6 +208,12 @@ load test_helper
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag two: <a.* href=\"//localhost:6789/local:${_expected_params}&--query=%23tag-2\">#tag-2</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag three: <a.* href=\"//localhost:6789/local:${_expected_params}&--query=%23tag-3/nested-1\">#tag-3/nested-1</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag four: <a.* href=\"//localhost:6789/local:${_expected_params}&--query=%23tag-4/nested-2/nested-3\">#tag-4/nested-2/nested-3</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag not valid: 123#not-valid-tag •"
@@ -229,9 +246,9 @@ load test_helper
 "<a href=\"//localhost:6789/local:${_expected_params}&--query=%23tag9\">#tag9</a>"
 }
 
-# <nav> and <code> ############################################################
+# <nav>, <code>, and <h2>Content</h2> #########################################
 
-@test "'_resolve_links --browse' with .html skips nav and code sections." {
+@test "'_resolve_links --browse' with non-bookmark .html skips nav and code sections and does not skip <h2>Content</h2>." {
   {
     "${_NB}" init
 
@@ -240,18 +257,33 @@ load test_helper
       --title     "Sample Nested Title One"                   \
       --content   "$(cat <<HEREDOC
 [[1]]
+#one
 
 <nav>
 [[2]]
+#two
 </nav>
 
 [[3]]
+#three
 
-<code>
+\`\`\`
+code-one
 [[4]]
-</code>
+#four
+code-two
+\`\`\`
 
-[[5]]
+Example content line [[5]] #five without inline code.
+
+Example content line [[6]] #six with \`[[7]] #seven\` inline code.
+
+## Content
+
+[[8]]
+#eight
+
+#nine
 HEREDOC
 )"
 
@@ -285,6 +317,7 @@ HEREDOC
       --from=markdown                   \
       --to=html                         \
       --output="${_html_file_path}"     \
+      --wrap=preserve                   \
       "${NB_DIR}/home/Sample Folder/Sample Nested File One.md"
 
     [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
@@ -293,7 +326,7 @@ HEREDOC
   run "${_NB}" helpers resolve_links    \
     --browse                            \
     "${NB_DIR}/home"                    \
-    --page 123 --per-page 2 --terminal < "${_html_file_path}"
+    --page 123 --limit 2 --terminal < "${_html_file_path}"
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -304,19 +337,190 @@ HEREDOC
 "<h1 id=\"sample-nested-title-one\">Sample Nested Title One</h1>"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<p><a href=\"//localhost:6789/home:1?--per-page=2&--columns=70\">\[\[1\]\]</a></p>"
+"<p><a href=\"//localhost:6789/home:1?--columns=70&--limit=2\">\[\[1\]\]</a>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23one\">#one</a></p>"
 
   printf "%s\\n" "${output}" | grep -q  \
 "<nav>${_NEWLINE}\[\[2\]\]${_NEWLINE}</nav>"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<p><a href=\"//localhost:6789/home:3?--per-page=2&--columns=70\">\[\[3\]\]</a></p>"
+"<p><a href=\"//localhost:6789/home:3?--columns=70&--limit=2\">\[\[3\]\]</a>"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<p><code> \[\[4\]\] </code></p>"
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23three\">#three</a></p>"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<p><a href=\"//localhost:6789/home:5?--per-page=2&--columns=70\">\[\[5\]\]</a></p>"
+"<pre><code>code-one"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"^\[\[4\]\]$"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"^#four$"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"code-two</code></pre>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p>Example content line <a href=\"//localhost:6789/home:5?--columns=70&--limit=2\">\[\[5\]\]</a> <a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23five\">#five</a> without inline code.</p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p>Example content line <a href=\"//localhost:6789/home:6?--columns=70&--limit=2\">\[\[6\]\]</a> <a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23six\">#six</a> with <code>\[\[7\]\] #seven</code> inline code.</p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p><a href=\"//localhost:6789/home:8?--columns=70&--limit=2\">\[\[8\]\]</a>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23eight\">#eight</a></p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23nine\">#nine</a></p>"
+}
+
+@test "'_resolve_links --browse' with bookmark .html skips nav, code sections, and <h2>Content</h2>." {
+  {
+    "${_NB}" init
+
+
+    "${_NB}" add  "Sample Folder/Sample Nested File One.bookmark.md"  \
+      --title     "Sample Nested Title One"                           \
+      --content   "$(cat <<HEREDOC
+# Example Title
+
+https://example.com
+
+[[1]]
+#one
+
+<nav>
+[[2]]
+#two
+</nav>
+
+[[3]]
+#three
+
+\`\`\`
+code-one
+[[4]]
+#four
+code-two
+\`\`\`
+
+Example content line [[5]] #five without inline code.
+
+Example content line [[6]] #six with \`[[7]] #seven\` inline code.
+
+## Content
+
+[[8]]
+#eight
+
+#nine
+HEREDOC
+)"
+
+    "${_NB}" add  "Root File One.md"    \
+      --title     "Root Title One"      \
+      --content   "Root content one."
+
+    "${_NB}" add  "Root File Two.md"    \
+      --title     "Root Title Two"      \
+      --content   "Root content two."
+
+    "${_NB}" add  "Root File Three.md"  \
+      --title     "Root Title Three"    \
+      --content   "Root content three."
+
+    "${_NB}" add  "Root File Four.md"   \
+      --title     "Root Title Four"     \
+      --content   "Root content four."
+
+    "${_NB}" add  "Root File Five.md"   \
+      --title     "Root Title Five"     \
+      --content   "Root content five."
+
+    declare _html_file_path="${_TMP_DIR}/unlinked.html"
+    touch "${_html_file_path:?}"
+
+    cd "${_TMP_DIR}"
+    git init &>/dev/null
+
+    pandoc                              \
+      --from=markdown                   \
+      --to=html                         \
+      --output="${_html_file_path}"     \
+      --wrap=preserve                   \
+      "${NB_DIR}/home/Sample Folder/Sample Nested File One.bookmark.md"
+
+    [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
+  }
+
+  run "${_NB}" helpers resolve_links    \
+    --browse                            \
+    "${NB_DIR}/home"                    \
+    --page 123 --limit 2 --terminal --bookmark < "${_html_file_path}"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"  -eq 0                 ]]
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<h1 id=\"sample-nested-title-one\">Sample Nested Title One</h1>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p><a href=\"//localhost:6789/home:1?--columns=70&--limit=2\">\[\[1\]\]</a>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23one\">#one</a></p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<nav>${_NEWLINE}\[\[2\]\]${_NEWLINE}</nav>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p><a href=\"//localhost:6789/home:3?--columns=70&--limit=2\">\[\[3\]\]</a>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23three\">#three</a></p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<pre><code>code-one"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"^\[\[4\]\]$"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"^#four$"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"code-two</code></pre>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p>Example content line <a href=\"//localhost:6789/home:5?--columns=70&--limit=2\">\[\[5\]\]</a> <a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23five\">#five</a> without inline code.</p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p>Example content line <a href=\"//localhost:6789/home:6?--columns=70&--limit=2\">\[\[6\]\]</a> <a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23six\">#six</a> with <code>\[\[7\]\] #seven</code> inline code.</p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p>\[\[8\]\]"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"#eight</p>"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"<p>#nine</p>"
+
+  printf "%s\\n" "${output}" | grep -q -v \
+"<p><a href=\"//localhost:6789/home:8?--columns=70&--limit=2\">\[\[8\]\]</a>"
+
+  printf "%s\\n" "${output}" | grep -q -v \
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23eight\">#eight</a></p>"
+
+  printf "%s\\n" "${output}" | grep -q -v \
+"<p><a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23nine\">#nine</a></p>"
 }
 
 # .html #######################################################################
@@ -332,6 +536,8 @@ HEREDOC
     _content+="Labeled link two: [[Root Title One|Sample label.]] • "
     _content+="Tag one: #tag_1 • "
     _content+="Tag two: #tag-2 • "
+    _content+="Tag three: #tag-3/nested-1 • "
+    _content+="Tag four: #tag-4/nested-2/nested-3 • "
     _content+="Tag not valid: 123#not-valid-tag • "
     _content+="${_NEWLINE}${_NEWLINE}#tag3${_NEWLINE}${_NEWLINE}"
     _content+="#tag4 #tag5 #tag6 #tag7${_NEWLINE}${_NEWLINE}"
@@ -360,6 +566,7 @@ HEREDOC
       --from=markdown                   \
       --to=html                         \
       --output="${_html_file_path}"     \
+      --wrap=preserve                   \
       "${NB_DIR}/home/Sample Folder/Sample Nested File One.md"
 
     [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
@@ -370,7 +577,7 @@ HEREDOC
   run "${_NB}" helpers resolve_links    \
     --browse                            \
     "${NB_DIR}/home"                    \
-    --page 123 --per-page 2 --terminal  < "${_html_file_path}"
+    --page 123 --limit 2 --terminal  < "${_html_file_path}"
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -378,40 +585,46 @@ HEREDOC
   [[ "${status}"  -eq 0                 ]]
 
   printf "%s\\n" "${output}" | grep -q  \
-"Selector link one: <a.* href=\"//localhost:6789/home:2/1?--per-page=2&--columns=70\">\[\[home:2/1\]\]</a> •"
+"Selector link one: <a.* href=\"//localhost:6789/home:2/1?--columns=70&--limit=2\">\[\[home:2/1\]\]</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Selector link two: <a.* href=\"//localhost:6789/home:Root Title One?--per-page=2&--columns=70\">\[\[Root Title One\]\]</a> •"
+"Selector link two: <a.* href=\"//localhost:6789/home:Root Title One?--columns=70&--limit=2\">\[\[Root Title One\]\]</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Labeled link one: <a.* href=\"//localhost:6789/home:2/1?--per-page=2&--columns=70\">\[\[Example label.\]\]</a> •"
+"Labeled link one: <a.* href=\"//localhost:6789/home:2/1?--columns=70&--limit=2\">\[\[Example label.\]\]</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Labeled link two: <a.* href=\"//localhost:6789/home:Root Title One?--per-page=2&--columns=70\">\[\[Sample label.\]\]</a> •"
+"Labeled link two: <a.* href=\"//localhost:6789/home:Root Title One?--columns=70&--limit=2\">\[\[Sample label.\]\]</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Tag one: <a.* href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag_1\">#tag_1</a> •"
+"Tag one: <a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag_1\">#tag_1</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Tag two: <a.* href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag-2\">#tag-2</a> •"
+"Tag two: <a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag-2\">#tag-2</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag three: <a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag-3/nested-1\">#tag-3/nested-1</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag four: <a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag-4/nested-2/nested-3\">#tag-4/nested-2/nested-3</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag not valid: 123#not-valid-tag •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<p><a.* href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag3\">#tag3</a></p>"
+"<p><a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag3\">#tag3</a></p>"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<p><a.* href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag4\">#tag4</a> "
+"<p><a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag4\">#tag4</a> "
 
   printf "%s\\n" "${output}" | grep -q  \
-" <a.* href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag5\">#tag5</a> "
+" <a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag5\">#tag5</a> "
 
   printf "%s\\n" "${output}" | grep -q  \
-" <a.* href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag6\">#tag6</a> "
+" <a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag6\">#tag6</a> "
 
   printf "%s\\n" "${output}" | grep -q  \
-" <a.* href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag7\">#tag7</a></p>"
+" <a.* href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag7\">#tag7</a></p>"
 
   printf "%s\\n" "${output}" | grep -q  \
 "<p><a.* href=\"//localhost:6789?url=http%3A%2F%2Fexample.com\">Example Outbound Link One</a> •"
@@ -420,10 +633,10 @@ HEREDOC
 "<a.* href=\"//localhost:6789?url=https%3A%2F%2Ftest.test\">Example Outbound Link Two</a> •</p>"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<a href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag8\">#tag8</a>"
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag8\">#tag8</a>"
 
   printf "%s\\n" "${output}" | grep -q  \
-"<a href=\"//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag9\">#tag9</a>"
+"<a href=\"//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag9\">#tag9</a>"
 }
 
 @test "'_resolve_links --browse' resolves [[wiki-style links]], tags, and outbound links in partial .html files to .html links to local web server URLs." {
@@ -437,6 +650,8 @@ HEREDOC
     _content+="Labeled link two: [[Root Title One|Sample label.]] • "
     _content+="Tag one: #tag_1 • "
     _content+="Tag two: #tag-2 • "
+    _content+="Tag three: #tag-3/nested-1 • "
+    _content+="Tag four: #tag-4/nested-2/nested-3 • "
     _content+="Tag not valid: 123#not-valid-tag • "
     _content+="${_NEWLINE}${_NEWLINE}#tag3${_NEWLINE}${_NEWLINE}"
     _content+="#tag4 #tag5 #tag6 #tag7${_NEWLINE}${_NEWLINE}"
@@ -465,6 +680,7 @@ HEREDOC
       --from=markdown                   \
       --to=html                         \
       --output="${_html_file_path}"     \
+      --wrap=preserve                   \
       "${NB_DIR}/home/Sample Folder/Sample Nested File One.md"
 
     [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
@@ -496,6 +712,12 @@ HEREDOC
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag two: <a.* href=\"//localhost:6789/home:?--query=%23tag-2\">#tag-2</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag three: <a.* href=\"//localhost:6789/home:?--query=%23tag-3/nested-1\">#tag-3/nested-1</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+"Tag four: <a.* href=\"//localhost:6789/home:?--query=%23tag-4/nested-2/nested-3\">#tag-4/nested-2/nested-3</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag not valid: 123#not-valid-tag •"
@@ -533,6 +755,8 @@ HEREDOC
     _content+="Labeled link two: [[Root Title One|Sample label.]] • "
     _content+="Tag one: #tag_1 • "
     _content+="Tag two: #tag-2 • "
+    _content+="Tag three: #tag-3/nested-1 • "
+    _content+="Tag four: #tag-4/nested-2/nested-3 • "
     _content+="Tag not valid: 123#not-valid-tag • "
     _content+="${_NEWLINE}${_NEWLINE}#tag3${_NEWLINE}${_NEWLINE}"
     _content+="#tag4 #tag5 #tag6 #tag7${_NEWLINE}${_NEWLINE}"
@@ -562,6 +786,7 @@ HEREDOC
       --to=html                         \
       --output="${_html_file_path}"     \
       --standalone                      \
+      --wrap=preserve                   \
       "${NB_DIR}/home/Sample Folder/Sample Nested File One.md"
 
     [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
@@ -593,6 +818,12 @@ HEREDOC
 
   printf "%s\\n" "${output}" | grep -q  \
       "Tag two: <a.* href=\"//localhost:6789/home:?--query=%23tag-2\">#tag-2</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+      "Tag three: <a.* href=\"//localhost:6789/home:?--query=%23tag-3/nested-1\">#tag-3/nested-1</a> •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+      "Tag four: <a.* href=\"//localhost:6789/home:?--query=%23tag-4/nested-2/nested-3\">#tag-4/nested-2/nested-3</a> •"
 
   printf "%s\\n" "${output}" | grep -q  \
       "Tag not valid: 123#not-valid-tag •"
@@ -633,6 +864,8 @@ HEREDOC
     _content+="Labeled link two: [[Root Title One|Sample label.]] • "
     _content+="Tag one: #tag_1 • "
     _content+="Tag two: #tag-2 • "
+    _content+="Tag three: #tag-3/nested-1 • "
+    _content+="Tag four: #tag-4/nested-2/nested-3 • "
     _content+="Tag not valid: 123#not-valid-tag • "
     _content+="${_NEWLINE}${_NEWLINE}#tag3${_NEWLINE}${_NEWLINE}"
     _content+="#tag4 #tag5 #tag6 #tag7${_NEWLINE}${_NEWLINE}"
@@ -661,6 +894,7 @@ HEREDOC
       --from=markdown                   \
       --to=html                         \
       --output="${_html_file_path}"     \
+      --wrap=preserve                   \
       "${NB_DIR}/home/Sample Folder/Sample Nested File One.md"
 
     [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
@@ -690,6 +924,12 @@ HEREDOC
 
   printf "%s\\n" "${output}" | grep -q  \
       "Tag two: #tag-2 •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+      "Tag three: #tag-3/nested-1 •"
+
+  printf "%s\\n" "${output}" | grep -q  \
+      "Tag four: #tag-4/nested-2/nested-3 •"
 
   printf "%s\\n" "${output}" | grep -q  \
       "Tag not valid: 123#not-valid-tag •"
@@ -747,6 +987,7 @@ HEREDOC
       --to=html                         \
       --output="${_html_file_path}"     \
       --standalone                      \
+      --wrap=preserve                   \
       "${NB_DIR}/home/Sample Folder/Sample Nested File One.md"
 
     [[ "$(cat "${_html_file_path}")" =~ \<h1\ id=\"sample-nested-title-one ]]
@@ -834,7 +1075,7 @@ HEREDOC
     --browse                            \
     "${NB_DIR}/home"                    \
     --type org                          \
-    --page 123 --per-page 2             \
+    --page 123 --limit 2             \
     --terminal < "${NB_DIR}/home/Sample Folder/Sample Nested File One.org"
 
   printf "\${status}: '%s'\\n" "${status}"
@@ -843,22 +1084,22 @@ HEREDOC
   [[ "${status}"  -eq 0                 ]]
 
   printf "%s\\n" "${output}" | grep -q  \
-"Selector link one: \[\[//localhost:6789/home:2/1?--per-page=2&--columns=70\]\[\[\[home:2/1\]\]\]\] •"
+"Selector link one: \[\[//localhost:6789/home:2/1?--columns=70&--limit=2\]\[\[\[home:2/1\]\]\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Selector link two: \[\[//localhost:6789/home:3?--per-page=2&--columns=70\]\[\[\[Root Title One\]\]\]\] •"
+"Selector link two: \[\[//localhost:6789/home:3?--columns=70&--limit=2\]\[\[\[Root Title One\]\]\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Labeled link one: \[\[//localhost:6789/home:2/1?--per-page=2&--columns=70\]\[\[\[Example label.\]\]\]\] •"
+"Labeled link one: \[\[//localhost:6789/home:2/1?--columns=70&--limit=2\]\[\[\[Example label.\]\]\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Labeled link two: \[\[//localhost:6789/home:3?--per-page=2&--columns=70\]\[\[\[Sample label.\]\]\]\] •"
+"Labeled link two: \[\[//localhost:6789/home:3?--columns=70&--limit=2\]\[\[\[Sample label.\]\]\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Tag one: \[\[//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag_1\]\[#tag_1\]\] •"
+"Tag one: \[\[//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag_1\]\[#tag_1\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"Tag two: \[\[//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag-2\]\[#tag-2\]\] •"
+"Tag two: \[\[//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag-2\]\[#tag-2\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
 "Tag not valid: 123#not-valid-tag •"
@@ -873,19 +1114,19 @@ HEREDOC
 "Internal Org mode link: \[\[#sample\]\] •"
 
   printf "%s\\n" "${output}" | grep -q  \
-"^\[\[//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag3\]\[#tag3\]\]$"
+"^\[\[//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag3\]\[#tag3\]\]$"
 
   printf "%s\\n" "${output}" | grep -q  \
-"^\[\[//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag4\]\[#tag4\]\] "
+"^\[\[//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag4\]\[#tag4\]\] "
 
   printf "%s\\n" "${output}" | grep -q  \
-" \[\[//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag5\]\[#tag5\]\] "
+" \[\[//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag5\]\[#tag5\]\] "
 
   printf "%s\\n" "${output}" | grep -q  \
-" \[\[//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag6\]\[#tag6\]\] "
+" \[\[//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag6\]\[#tag6\]\] "
 
   printf "%s\\n" "${output}" | grep -q  \
-" \[\[//localhost:6789/home:?--per-page=2&--columns=70&--query=%23tag7\]\[#tag7\]\]$"
+" \[\[//localhost:6789/home:?--columns=70&--limit=2&--query=%23tag7\]\[#tag7\]\]$"
 }
 
 @test "'_resolve_links --browse' resolves [[wiki-style links]] and #tags in .org files to .org links to local web server URLs." {

@@ -1,5 +1,11 @@
+# frozen_string_literal: true
+
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
+
+# rubocop:disable all
+
+# NOTE: Uncomment box config block for `vagrant up` / `vagrant provision`.
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -21,6 +27,52 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
 
+  #############################################################################
+  # Arch Boxes
+
+  $arch_setup = <<-HEREDOC
+sudo su root
+
+# https://bbs.archlinux.org/viewtopic.php?id=282796
+pacman --noconfirm -Sy archlinux-keyring && pacman --noconfirm -Syu
+
+# install nvm (https://github.com/nvm-sh/nvm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.36.0/install.sh | bash
+
+# add project root to $PATH
+if grep -q -v vagrant "${HOME}/.bashrc"
+then
+  printf "\\nexport PATH=\"/vagrant:\${PATH}\"\\n" >> "${HOME}/.bashrc"
+fi
+
+sudo pacman       \
+  --noconfirm     \
+  -Syu            \
+  bash-bats       \
+  elinks          \
+  fish            \
+  git             \
+  lynx            \
+  nmap            \
+  pandoc-cli      \
+  python-pygments \
+  vim             \
+  w3m
+HEREDOC
+
+  ######
+  # Arch
+  #
+  # https://app.vagrantup.com/archlinux/boxes/archlinux
+
+  # config.vm.define "arch" do |arch|
+  #   arch.vm.box = "archlinux/archlinux"
+  #   arch.vm.provision :shell, inline: $arch_setup, privileged: false
+  # end
+
+  #############################################################################
+  # CentOS Boxes
+
   $centos_setup = <<-HEREDOC
 # install nvm (https://github.com/nvm-sh/nvm)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.36.0/install.sh | bash
@@ -32,60 +84,27 @@ then
 fi
 HEREDOC
 
+  ##########
   # CentOS 8
+
   # config.vm.define "centos8" do |centos8|
   #   centos8.vm.box = "centos/8"
   #   centos8.vm.box_version = "1905.1"
   #   centos8.vm.provision :shell, inline: $centos_setup, privileged: false
   # end
 
+  ##########
   # CentOS 7
+
   # config.vm.define "centos7" do |centos7|
   #   centos7.vm.box = "centos/7"
   #   centos7.vm.provision :shell, inline: $centos_setup, privileged: false
   # end
 
-  $freebsd_setup = <<-HEREDOC
-# TODO
-HEREDOC
+  #############################################################################
+  # Debian Boxes
 
-  # FreeBSD 12.2
-  # config.vm.define "freebsd122" do |freebsd122|
-  #   freebsd122.vm.box = "freebsd/FreeBSD-12.2-STABLE"
-  #   freebsd122.vm.provision :shell, inline: $freebsd_setup, privileged: false
-  # end
-
-  $nixos_setup = <<-HEREDOC
-# install git
-nix-env -iA nixos.pkgs.gitAndTools.gitFull
-
-# install nvm (https://github.com/nvm-sh/nvm)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.36.0/install.sh | bash
-
-# add project root to $PATH
-if [[ -f "${HOME}/.bashrc" ]] && grep -q -v vagrant "${HOME}/.bashrc"
-then
-  touch "${HOME}/.bashrc"
-  printf "\\nexport PATH=\"/vagrant:\${PATH}\"\\n" >> "${HOME}/.bashrc"
-fi
-HEREDOC
-
-  # NixOS 20.03
-  # https://app.vagrantup.com/nixos/boxes/nixos-20.03-test
-  # config.vm.define "nixos2003" do |nixos2003|
-  #   nixos2003.vm.box = "nixos/nixos-20.03-test"
-  #   nixos2003.vm.box_version = "0.0.1"
-  #   nixos2003.vm.provision :shell, inline: $nixos_setup, privileged: false
-  # end
-
-  # NixOS 18.03
-  # https://app.vagrantup.com/nixos/boxes/nixos-18.03-i686
-  # config.vm.define "nixos1803" do |nixos1803|
-  #   nixos1803.vm.box = "nixos/nixos-18.03-i686"
-  #   nixos1803.vm.provision :shell, inline: $nixos_setup, privileged: false
-  # end
-
-  $ubuntu_setup = <<-HEREDOC
+  $debian_setup = <<-HEREDOC
 # install node and npm
 # sudo apt update -y
 # sudo apt install nodejs -y
@@ -106,12 +125,12 @@ sudo apt-get install bats   -y
 sudo apt-get install elinks -y
 sudo apt-get install lynx   -y
 sudo apt-get install ncat   -y
-sudo apt-get install python-pygments -y
+sudo apt-get install python3-pygments -y
 sudo apt-get install w3m    -y
 
 # install latest pandoc
-curl -LO https://github.com/jgm/pandoc/releases/download/2.11.2/pandoc-2.11.2-1-amd64.deb
-sudo dpkg -i pandoc-2.11.2-1-amd64.deb
+curl -LO https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-1-amd64.deb
+sudo dpkg -i pandoc-3.1.11.1-1-amd64.deb
 
 # install latest bat
 curl -LO https://github.com/sharkdp/bat/releases/download/v0.16.0/bat_0.16.0_amd64.deb
@@ -120,38 +139,320 @@ sudo dpkg -i bat_0.16.0_amd64.deb
 # install latest git
 sudo add-apt-repository ppa:git-core/ppa
 sudo apt update
-sudo apt install git
+sudo apt install git -y
+
+git config --global user.name   "Example Name"
+git config --global user.email  "example@example.test"
+
+# set locale
+sudo apt-get clean
+sudo apt-get update
+sudo apt-get install locales -y
+sudo locale-gen en_US.UTF-8
+
+printf "%s\\n" "LANG=en_US.UTF-8" | sudo tee /etc/default/locale > /dev/null
+HEREDOC
+
+  # config.vm.define "debian12" do |debian12|
+  #   debian12.vm.box = "debian/bookworm64"
+  #   debian12.vm.provision :shell, inline: $debian_setup, privileged: false
+  # end
+
+  #############################################################################
+  # EndeavorOS Boxes
+
+  # NOTE: uses $arch_setup
+
+  # config.vm.define "endeavor" do |endeavor|
+  #   endeavor.vm.box = "altafsaljooq/EndeavousOS"
+  #   endeavor.vm.provision :shell, inline: $arch_setup, privileged: false
+  # end
+
+  #############################################################################
+  # Fedora Boxes
+
+  $fedora_setup = <<-HEREDOC
+# install dependencies
+sudo dnf -y update
+sudo dnf -y install bats
+sudo dnf -y install elinks
+sudo dnf -y install git
+sudo dnf -y install lynx
+sudo dnf -y install nmap-ncat
+sudo dnf -y install pandoc
+sudo dnf -y install python3-pygments
+sudo dnf -y install w3m
+
+# install nvm (https://github.com/nvm-sh/nvm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+# add project root to $PATH
+if [[ -f "${HOME}/.bashrc" ]] && grep -q -v vagrant "${HOME}/.bashrc"
+then
+  touch "${HOME}/.bashrc"
+  printf "\\nexport PATH=\"/vagrant:\${PATH}\"\\n" >> "${HOME}/.bashrc"
+fi
+HEREDOC
+
+  ###########
+  # Fedora 41
+
+  # https://app.vagrantup.com/fedora/boxes/41-cloud-base
+  # config.vm.define "fedora41" do |fedora41|
+  #   fedora41.vm.box = "fedora/41-cloud-base"
+  #   fedora41.vm.provision :shell, inline: $fedora_setup, privileged: false
+  # end
+
+  ###########
+  # Fedora 38
+
+  # https://app.vagrantup.com/fedora/boxes/38-cloud-base
+  # config.vm.define "fedora38" do |fedora38|
+  #   fedora38.vm.box         = "fedora/38-cloud-base"
+  #   fedora38.vm.box_version = "38.20230413.1"
+  #   fedora38.vm.provision :shell, inline: $fedora_setup, privileged: false
+  # end
+
+  ###########
+  # Fedora 36
+
+  # https://app.vagrantup.com/fedora/boxes/36-cloud-base
+  # config.vm.define "fedora36" do |fedora36|
+  #   fedora36.vm.box         = "fedora/36-cloud-base"
+  #   fedora36.vm.box_version = "36-20220504.1"
+  #   fedora36.vm.provision :shell, inline: $fedora_setup, privileged: false
+  # end
+
+  #############################################################################
+  # FreeBSD Boxes
+
+  $freebsd_setup = <<-HEREDOC
+sudo pkg update -f
+sudo pkg install -y git
+HEREDOC
+
+  ##############
+  # FreeBSD 12.5
+
+  # config.vm.define "freebsd124" do |freebsd124|
+  #   freebsd124.vm.box = "freebsd/FreeBSD-12.4-STABLE"
+  #   freebsd124.vm.provision :shell, inline: $freebsd_setup, privileged: false
+  # end
+
+  #############################################################################
+  # NixOS Boxes
+
+  $nixos_setup = <<-HEREDOC
+# install git
+nix-env -iA nixos.pkgs.gitAndTools.gitFull
+
+# install nvm (https://github.com/nvm-sh/nvm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.36.0/install.sh | bash
+
+# add project root to $PATH
+if [[ -f "${HOME}/.bashrc" ]] && grep -q -v vagrant "${HOME}/.bashrc"
+then
+  touch "${HOME}/.bashrc"
+  printf "\\nexport PATH=\"/vagrant:\${PATH}\"\\n" >> "${HOME}/.bashrc"
+fi
+HEREDOC
+
+  #############
+  # NixOS 24.11
+
+  # config.vm.define "nixos2411" do |nixos2411|
+  #   nixos2411.vm.box          = "boxen/nixos-24.11"
+  #   nixos2411.vm.box_version  = "2025.04.02.21"
+  #   nixos2411.vm.provision :shell, inline: $nixos_setup, privileged: false
+  # end
+
+  #############
+  # NixOS 24.05
+
+  # config.vm.define "nixos2405" do |nixos2405|
+  #   nixos2405.vm.box          = "nixbox/nixos"
+  #   nixos2405.vm.box_version  = "24.05"
+  #   nixos2405.vm.provision :shell, inline: $nixos_setup, privileged: false
+  # end
+
+  #############
+  # NixOS 23.11
+
+  # config.vm.define "nixos2311" do |nixos2311|
+  #   nixos2311.vm.box          = "nixbox/nixos"
+  #   nixos2311.vm.box_version  = "23.11"
+  #   nixos2311.vm.provision :shell, inline: $nixos_setup, privileged: false
+  # end
+
+  #############
+  # NixOS 23.05
+
+  # https://license.hashicorp.com/boxen/boxes/nixos-23.05-x86_64
+  # config.vm.define "nixos2305" do |nixos2305|
+  #   nixos2305.vm.box         = "boxen/nixos-23.05-x86_64"
+  #   nixos2305.vm.box_version = "2023.8.14.0"
+  #   nixos2305.vm.provision :shell, inline: $nixos_setup, privileged: false
+  # end
+
+  #############
+  # NixOS 20.03
+
+  # https://app.vagrantup.com/nixos/boxes/nixos-20.03-test
+  # config.vm.define "nixos2003" do |nixos2003|
+  #   nixos2003.vm.box = "nixos/nixos-20.03-test"
+  #   nixos2003.vm.box_version = "0.0.1"
+  #   nixos2003.vm.provision :shell, inline: $nixos_setup, privileged: false
+  # end
+
+  #############
+  # NixOS 18.03
+
+  # https://app.vagrantup.com/nixos/boxes/nixos-18.03-i686
+  # config.vm.define "nixos1803" do |nixos1803|
+  #   nixos1803.vm.box = "nixos/nixos-18.03-i686"
+  #   nixos1803.vm.provision :shell, inline: $nixos_setup, privileged: false
+  # end
+
+  #############################################################################
+  # OpenBSD Boxes
+
+  $openbsd_setup = <<-HEREDOC
+# TODO
+# sudo su
+# echo "https://ftp.eu.OpenBSD.org/pub/OpenBSD" > /etc/installurl
+# pkg_add git
+# pkg_add bash
+# pkg_add vim
+HEREDOC
+
+  ###########
+  # OpenBSD 7
+
+  # https://app.vagrantup.com/fnichol/boxes/openbsd-7.0
+  # https://app.vagrantup.com/generic/boxes/openbsd7
+  # https://app.vagrantup.com/roboxes/boxes/openbsd7
+  # https://app.vagrantup.com/twingly/boxes/openbsd-7.1-amd64
+  # config.vm.define "openbsd7" do |openbsd7|
+  #   # openbsd7.vm.box = "fnichol/openbsd-7.0"
+  #   # openbsd7.vm.box = "generic/openbsd7"
+  #   # openbsd7.vm.box = "jcmdln/openbsd"
+  #   # openbsd7.vm.box = "roboxes/openbsd7"
+  #   openbsd7.vm.box = "twingly/openbsd-7.1-amd64"
+  #   openbsd7.vm.provision :shell, inline: $openbsd_setup, privileged: false
+  # end
+
+  ###########
+  # OpenBSD 6
+
+  # https://app.vagrantup.com/twingly/boxes/openbsd-6.9-amd64
+  # config.vm.define "openbsd6" do |openbsd6|
+  #   openbsd6.vm.box = "twingly/openbsd-6.9-amd64"
+  #   openbsd6.vm.provision :shell, inline: $openbsd_setup, privileged: false
+  # end
+
+  #############################################################################
+  # Ubuntu Boxes:
+  #
+  # https://app.vagrantup.com/ubuntu
+
+  $ubuntu_setup = <<-HEREDOC
+# install node and npm
+# sudo apt update -y
+# sudo apt install nodejs -y
+# sudo apt install npm -y
+
+# install nvm (https://github.com/nvm-sh/nvm)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.36.0/install.sh | bash
+
+# add project root to $PATH
+if grep -q -v vagrant "${HOME}/.bashrc"
+then
+  printf "\\nexport PATH=\"/vagrant:\${PATH}\"\\n" >> "${HOME}/.bashrc"
+fi
+
+# install dependencies
+sudo apt-get update
+sudo apt-get install bat    -y
+sudo apt-get install bats   -y
+sudo apt-get install elinks -y
+sudo apt-get install lynx   -y
+sudo apt-get install ncat   -y
+sudo apt-get install python3-pygments -y
+sudo apt-get install w3m    -y
+
+# install latest pandoc
+curl -LO https://github.com/jgm/pandoc/releases/download/3.1.11.1/pandoc-3.1.11.1-1-amd64.deb
+sudo dpkg -i pandoc-3.1.11.1-1-amd64.deb
+
+# install latest git
+sudo add-apt-repository ppa:git-core/ppa
+sudo apt update
+sudo apt install git -y
 
 git config --global user.name   "Example Name"
 git config --global user.email  "example@example.test"
 HEREDOC
 
+  ##############
+  # Ubuntu 24.04
+
+  # config.vm.define "ubuntu2404" do |ubuntu2404|
+  #   ubuntu2404.vm.box = "ubuntu/noble64"
+  #   ubuntu2404.vm.provision :shell, inline: $ubuntu_setup, privileged: false
+  # end
+
+  ##############
+  # Ubuntu 22.10
+
+  # config.vm.define "ubuntu2210" do |ubuntu2210|
+  #   ubuntu2210.vm.box = "ubuntu/kinetic64"
+  #   ubuntu2210.vm.provision :shell, inline: $ubuntu_setup, privileged: false
+  # end
+
+  ##############
+  # Ubuntu 22.04
+
+  # config.vm.define "ubuntu2204" do |ubuntu2204|
+  #   ubuntu2204.vm.box = "ubuntu/jammy64"
+  #   ubuntu2204.vm.provision :shell, inline: $ubuntu_setup, privileged: false
+  # end
+
+  ##############
   # Ubuntu 20.10
+
   # config.vm.define "ubuntu2010" do |ubuntu2010|
-  #   ubuntu2010.vm.box = "ubuntu/groovy64"
+  #   ubuntu2010.vm.box = "ubuntu/impish64"
   #   ubuntu2010.vm.provision :shell, inline: $ubuntu_setup, privileged: false
   # end
 
+  ##################
   # Ubuntu 20.04 LTS
+
   # config.vm.define "ubuntu2004" do |ubuntu2004|
   #   ubuntu2004.vm.box = "ubuntu/focal64"
   #   ubuntu2004.vm.provision :shell, inline: $ubuntu_setup, privileged: false
   # end
 
+  ##################
   # Ubuntu 18.04 LTS
+
   # config.vm.define "ubuntu1804" do |ubuntu1804|
   #   ubuntu1804.vm.box = "hashicorp/bionic64"
   #   ubuntu1804.vm.provision :shell, inline: $ubuntu_setup, privileged: false
   # end
 
+  ################
   # Ubuntu Desktop
+
   # config.vm.define "ubuntu_desktop" do |ubuntu_desktop|
   #   # https://app.vagrantup.com/gusztavvargadr/boxes/ubuntu-desktop
   #   ubuntu_desktop.vm.box = "gusztavvargadr/ubuntu-desktop"
   #   ubuntu_desktop.vm.provision :shell, inline: $ubuntu_setup, privileged: false
   # end
 
-  # Ubuntu Desktop
+  ######################
+  # Ubuntu 20.04 Desktop
+
   # config.vm.define "ubuntu_desktop" do |ubuntu_desktop|
   #   # https://app.vagrantup.com/peru/boxes/ubuntu-20.04-desktop-amd64
   #   ubuntu_desktop.vm.box = "peru/ubuntu-20.04-desktop-amd64"

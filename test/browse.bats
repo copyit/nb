@@ -2,10 +2,212 @@
 
 load test_helper
 
-export NB_SERVER_PORT=6789
+# general #####################################################################
 
-# non-breaking space
-export _S=" "
+@test "'browse' dependencies function as expected." {
+  {
+    "${_NB}" init
+    "${_NB}" add "Example Folder" --type "folder"
+    sleep 1
+  }
+
+  (ncat --exec "${_NB} browse --respond" --listen --source-port "6789" \
+    >"${_TMP_DIR}/ncat.out" 2>"${_TMP_DIR}/ncat.err") &
+  ncat_pid=$!
+
+  sleep 1
+
+  run curl -fsS -D - "http://localhost:6789/home:?--gui"
+
+  status=$?
+  wait "${ncat_pid}" || true
+
+  printf 'ncat stdout:\n'; cat "${_TMP_DIR}/ncat.out"
+  printf 'ncat stderr:\n'; cat "${_TMP_DIR}/ncat.err"
+  printf 'curl status: %s\n' "${status}"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq  0           ]]
+
+  [[    "${output}"  =~   \<html.*\>  ]]
+}
+
+@test "'browse --print' prints markup." {
+  {
+    "${_NB}" init
+
+    sleep 1
+
+    echo "${_NB}"
+    echo "$(which "${_NB}")"
+  }
+
+  run "${_NB}" browse --print
+
+  # run timeout 15 "${_NB}" browse --print
+
+  # run bash -c 'timeout 15 "'"${_NB}"'" browse --print'
+
+  # run bash -c '
+  #   set -x
+  #   "'"${_NB}"'" browse --print
+  # '
+
+  # echo $?
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq  0           ]]
+
+  [[    "${output}"  =~   \<html.*\>  ]]
+}
+
+# custom css and javascript ####################################################
+
+@test "'browse' omits custom css or javascript tags by default." {
+  {
+    "${_NB}" init
+
+    sleep 1
+  }
+
+  run "${_NB}" browse --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq  0                           ]]
+
+  [[ !  "${output}"  =~   \<link\ rel=\"stylesheet\"  ]]
+  [[ !  "${output}"  =~   \<script\ src=              ]]
+}
+
+@test "'browse' includes custom css and javascript tags with NB_CUSTOM_CSS and NB_CUSTOM_JS assigned." {
+  {
+    "${_NB}" init
+
+    sleep 1
+
+    declare _custom_css=".example { color: blue; }"
+    declare _custom_js="function example() { console.log(\"Example.\"); }"
+
+    declare _custom_css_url="//--original/home/example.css"
+    declare _custom_js_url="//--original/home/example.js"
+  }
+
+  NB_CUSTOM_CSS="${_custom_css:-}"  \
+    NB_CUSTOM_JS="${_custom_js:-}"  \
+    run "${_NB}" browse --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq  0 ]]
+
+  [[ !  "${output}"  =~   \<link\ rel=\"stylesheet\"  ]]
+  [[ !  "${output}"  =~   \<script\ src=              ]]
+  [[    "${output}"  =~   \
+\<style\>${_NEWLINE}.example\ \{\ color:\ blue\;\ \}${_NEWLINE}\</style\>  ]]
+  [[    "${output}"  =~   \
+\<script\>${_NEWLINE}function\ example\(\)\ \{\ console.log\(\"Example.\"\)\;\ \}${_NEWLINE}\</script\> ]]
+}
+
+@test "'browse' includes custom css and javascript tags with NB_CUSTOM_CSS and NB_CUSTOM_JAVASCRIPT assigned." {
+  {
+    "${_NB}" init
+
+    sleep 1
+
+    declare _custom_css=".example { color: blue; }"
+    declare _custom_js="function example() { console.log(\"Example.\"); }"
+
+    declare _custom_css_url="//--original/home/example.css"
+    declare _custom_js_url="//--original/home/example.js"
+  }
+
+  NB_CUSTOM_CSS="${_custom_css:-}"          \
+    NB_CUSTOM_JAVASCRIPT="${_custom_js:-}"  \
+    run "${_NB}" browse --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq  0 ]]
+
+  [[ !  "${output}"  =~   \<link\ rel=\"stylesheet\"  ]]
+  [[ !  "${output}"  =~   \<script\ src=              ]]
+  [[    "${output}"  =~   \
+\<style\>${_NEWLINE}.example\ \{\ color:\ blue\;\ \}${_NEWLINE}\</style\> ]]
+  [[    "${output}"  =~   \
+\<script\>${_NEWLINE}function\ example\(\)\ \{\ console.log\(\"Example.\"\)\;\ \}${_NEWLINE}\</script\> ]]
+}
+
+@test "'browse' includes custom css and javascript tags with NB_CUSTOM_CSS_URL and NB_CUSTOM_JS_URL assigned." {
+  {
+    "${_NB}" init
+
+    sleep 1
+
+    declare _custom_css=".example { color: blue; }"
+    declare _custom_js="function example() { console.log(\"Example.\"); }"
+
+    declare _custom_css_url="//--original/home/example.css"
+    declare _custom_js_url="//--original/home/example.js"
+  }
+
+  NB_CUSTOM_CSS_URL="${_custom_css_url:-}"  \
+    NB_CUSTOM_JS_URL="${_custom_js_url:-}"  \
+    run "${_NB}" browse --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq  0 ]]
+
+  [[    "${output}"  =~   \
+\<link\ rel=\"stylesheet\"\ href=\"//--original/home/example.css\"/\>     ]]
+  [[    "${output}"  =~   \
+\<script\ src=\"//--original/home/example.js\"\>\</script\>               ]]
+  [[ !  "${output}"  =~   \
+\<style\>${_NEWLINE}.example\ \{\ color:\ blue\;\ \}${_NEWLINE}\</style\> ]]
+  [[ !  "${output}"  =~   \
+\<script\>${_NEWLINE}function\ example\(\)\ \{\ console.log\(\"Example.\"\)\;\ \}${_NEWLINE}\</script\> ]]
+}
+
+@test "'browse' includes custom css and javascript tags with NB_CUSTOM_CSS_URL and NB_CUSTOM_JAVASCRIPT_URL assigned." {
+  {
+    "${_NB}" init
+
+    sleep 1
+
+    declare _custom_css=".example { color: blue; }"
+    declare _custom_js="function example() { console.log(\"Example.\"); }"
+
+    declare _custom_css_url="//--original/home/example.css"
+    declare _custom_js_url="//--original/home/example.js"
+  }
+
+  NB_CUSTOM_CSS_URL="${_custom_css_url:-}"          \
+    NB_CUSTOM_JAVASCRIPT_URL="${_custom_js_url:-}"  \
+    run "${_NB}" browse --print
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"  -eq  0 ]]
+
+  [[    "${output}"  =~   \
+\<link\ rel=\"stylesheet\"\ href=\"//--original/home/example.css\"/\>     ]]
+  [[    "${output}"  =~   \
+\<script\ src=\"//--original/home/example.js\"\>\</script\>               ]]
+  [[ !  "${output}"  =~   \
+\<style\>${_NEWLINE}.example\ \{\ color:\ blue\;\ \}${_NEWLINE}\</style\> ]]
+  [[ !  "${output}"  =~   \
+\<script\>${_NEWLINE}function\ example\(\)\ \{\ console.log\(\"Example.\"\)\;\ \}${_NEWLINE}\</script\> ]]
+}
 
 # configuration ###############################################################
 
@@ -112,16 +314,16 @@ export _S=" "
   [[ "${status}"  ==  0 ]]
 
   [[ "${output}"  =~  \
-href=\"//localhost:6789/\?--per-page=.*\"\>\<span\ class=\"dim\"\>❯\</span\>nb\</a\>        ]]
+href=\"//localhost:6789/\?--columns=.*\&--limit=.*\"\>\<span\ class=\"muted\"\>❯\</span\>nb\</a\>  ]]
   [[ "${output}"  =~  \
-\<nav\ class=\"header-crumbs\"\>\<h1\>.*\<a.*\ href=\"//localhost:6789/\?--per-page=.*\"\>  ]]
+\<nav\ class=\"header-crumbs\"\>.*\<a.*\ href=\"//localhost:6789/\?--columns=.*\&--limit=.*\"\>    ]]
   [[ "${output}"  =~  \
-.*·.*\ \<a.*\ href=\"//localhost:6789/home:\?--per-page=.*\"\>home\</a\>\ .*:.*\            ]]
+.*·.*\ \<a.*\ href=\"//localhost:6789/home:\?--columns=.*\&--limit=.*\"\>home\</a\>\ .*:.*\        ]]
   [[ "${output}"  =~  \
-\<a.*\ href=\"//localhost:6789/home:1/\?--per-page=.*\"\>Example\ Conflicting\ Name\</a\>\ .*/.*\</h1\>  ]]
+\<a.*\ href=\"//localhost:6789/home:1/\?--columns=.*\&--limit=.*\"\>Example\ Conflicting\ Name\</a\>\ .*/.*\</strong\>\</nav\>           ]]
 
   [[ "${output}"  =~  \
-\<a.*\ href=\"//localhost:6789/home:1/1\?--per-page=.*\"\ class=\"list-item\"\>.*\[.*Example${_S}Conflicting${_S}Name/1.*\].* ]]
+\<a.*\ href=\"//localhost:6789/home:1/1\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>.*\[.*Example${_S}Conflicting${_S}Name/1.*\].* ]]
   [[ "${output}"  =~  \
 class=\"list-item\"\>.*\[.*Example${_S}Conflicting${_S}Name/1.*\].*${_S}Example${_S}Folder${_S}File.md${_S}·  ]]
   [[ "${output}"  =~  \
@@ -474,15 +676,15 @@ HEREDOC
   [[ "${status}"  ==  0 ]]
 
   [[ "${output}"  =~  \
-href=\"//localhost:6789/\?--per-page=.*\"\>\<span\ class=\"dim\"\>❯\</span\>nb\</a\>          ]]
+href=\"//localhost:6789/\?--columns=.*\&--limit=.*\"\>\<span\ class=\"muted\"\>❯\</span\>nb\</a\>                    ]]
   [[ "${output}"  =~  \
-\<nav\ class=\"header-crumbs\"\>\<h1\>.*\<a.*\ href=\"//localhost:6789/\?--per-page=.*\"\>    ]]
+\<nav\ class=\"header-crumbs\"\>.*\<a.*\ href=\"//localhost:6789/\?--columns=.*\&--limit=.*\"\>                      ]]
   [[ "${output}"  =~  \
-.*·.*\ \<a.*\ href=\"//localhost:6789/home:\?--per-page=.*\"\>home\</a\>\ .*:.*\              ]]
+.*·.*\ \<a.*\ href=\"//localhost:6789/home:\?--columns=.*\&--limit=.*\"\>home\</a\>\ .*:.*\                          ]]
   [[ "${output}"  =~  \
-\<a.*\ href=\"//localhost:6789/home:1/\?--per-page=.*\"\>Example\ Folder\</a\>\ .*/.*\</h1\>  ]]
+\<a.*\ href=\"//localhost:6789/home:1/\?--columns=.*\&--limit=.*\"\>Example\ Folder\</a\>\ .*/.*\</strong\>\</nav\>  ]]
 
-  [[ "${output}"  =~  0\ items. ]]
+  [[ "${output}"  =~  0${_NBSP}items. ]]
 
   run "${_NB}" browse 2/ --print
 
@@ -492,18 +694,18 @@ href=\"//localhost:6789/\?--per-page=.*\"\>\<span\ class=\"dim\"\>❯\</span\>nb
   [[ "${status}"  ==  0 ]]
 
   [[ "${output}"  =~  \
-\<nav\ class=\"header-crumbs\"\>\<h1\>\<a.*\ href=\"//localhost:6789/\?--per-page=.*\"\>\<span  ]]
+\<nav\ class=\"header-crumbs\"\>\<strong\>\<a.*\ href=\"//localhost:6789/\?--columns=.*\&--limit=.*\"\>\<span ]]
   [[ "${output}"  =~  \
-\<span\ class=\"dim\"\>❯\</span\>nb\</a\>                                         ]]
+\<span\ class=\"muted\"\>❯\</span\>nb\</a\>                                                                   ]]
   [[ "${output}"  =~  \
-.*·.*\ \<a.*\ href=\"//localhost:6789/home:\?--per-page=.*\"\>home\</a\>\ .*:.*\  ]]
+.*·.*\ \<a.*\ href=\"//localhost:6789/home:\?--columns=.*\&--limit=.*\"\>home\</a\>\ .*:.*\                   ]]
   [[ "${output}"  =~  \
-\<a.*\ href=\"//localhost:6789/home:2/\?--per-page=.*\"\>1\</a\>\ .*/.*\</h1\>    ]]
+\<a.*\ href=\"//localhost:6789/home:2/\?--columns=.*\&--limit=.*\"\>1\</a\>\ .*/.*\</strong\>\</nav\>         ]]
 
   [[ "${output}"  =~  \
-\<a.*\ href=\"//localhost:6789/home:2/1\?--per-page=.*\"\ class=\"list-item\"\>.*\[.*1/1.*\].*  ]]
+\<a.*\ href=\"//localhost:6789/home:2/1\?--columns=.*\&--limit=.*\"\ class=\"list-item\"\>.*\[.*1/1.*\].*     ]]
   [[ "${output}"  =~  \
-class=\"list-item\"\>.*\[.*1/1.*\].*${_S}File${_S}One.md${_S}·${_S}\"Example${_S}content\.\"\</a\>\<br\>  ]]
+class=\"list-item\"\>.*\[.*1/1.*\].*${_S}File${_S}One.md${_S}·${_S}\"Example${_S}content\.\"\</a\>\<br\>      ]]
 }
 
 # headers #######################################################################

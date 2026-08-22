@@ -2,11 +2,6 @@
 
 load test_helper
 
-export NB_SERVER_PORT=6789
-
-# non-breaking space
-export _S=" "
-
 # browse --serve ##############################################################
 
 @test "'browse --serve' displays message with selector when notebook selector is specified before subcommand." {
@@ -40,7 +35,7 @@ export _S=" "
 
     declare _encoded_tmp_dir="${_TMP_DIR//$'/'/%2F}"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" notebooks add "Example Notebook"
 
@@ -70,7 +65,7 @@ export _S=" "
 
     declare _encoded_tmp_dir="${_TMP_DIR//$'/'/%2F}"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add "Example Folder/Example File.md" --content "Example content."
 
@@ -97,7 +92,7 @@ export _S=" "
 
     declare _encoded_tmp_dir="${_TMP_DIR//$'/'/%2F}"
 
-    "${_NB}" notebooks init
+    "${_NB}" notebooks init <<< "y${_NEWLINE}"
 
     "${_NB}" add "Example File.md" --content "Example content."
 

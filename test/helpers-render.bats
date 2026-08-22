@@ -1,8 +1,7 @@
 #!/usr/bin/env bats
+# shellcheck disable=SC1072,SC1073
 
 load test_helper
-
-export _S=" "
 
 # checkboxes ##################################################################
 
@@ -22,9 +21,9 @@ export _S=" "
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>  ]]
 
   [[    "${output}"    =~  \
-\#\ \<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>x\</span\>      ]]
+\#\ \<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>x\</span\>      ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>x\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>        ]]
+\<span\ class=\"identifier\"\>x\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>        ]]
 }
 
 @test "'_render' with todo item displays marked-up undone / open checkbox (space)." {
@@ -43,9 +42,9 @@ export _S=" "
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>  ]]
 
   [[    "${output}"    =~  \
-\#\ \<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>  ]]
+\#\ \<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>  ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>    ]]
+\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>    ]]
 }
 
 @test "'_render' with todo item displays marked-up undone / open checkbox (no space)." {
@@ -64,9 +63,9 @@ export _S=" "
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>  ]]
 
   [[    "${output}"    =~  \
-\#\ \<span\ class=\"dim\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>  ]]
+\#\ \<span\ class=\"muted\"\>\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>  ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>    ]]
+\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>    ]]
 }
 
 @test "'_render --pandoc' with todo item displays marked-up done / closed checkbox." {
@@ -85,11 +84,11 @@ export _S=" "
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>  ]]
 
   [[    "${output}"    =~  \
-\<h1\ id=\"x-example-todo-one.\"\>\<span\ class=\"dim\"\>\[\</span\>              ]]
+\<h1\ id=\"x-example-todo-one.\"\>\<span\ class=\"muted\"\>\[\</span\>              ]]
   [[    "${output}"    =~  \
-\[\</span\>\<span\ class=\"identifier\"\>x\</span\>                               ]]
+\[\</span\>\<span\ class=\"identifier\"\>x\</span\>                                 ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>x\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>      ]]
+\<span\ class=\"identifier\"\>x\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>      ]]
 }
 
 @test "'_render --pandoc' with todo item displays marked-up undone / open checkbox (space)." {
@@ -108,11 +107,11 @@ export _S=" "
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>  ]]
 
   [[    "${output}"    =~  \
-\<h1\ id=\"example-todo-one.\"\>\<span\ class=\"dim\"\>\[\</span\>                ]]
+\<h1\ id=\"example-todo-one.\"\>\<span\ class=\"muted\"\>\[\</span\>                ]]
   [[    "${output}"    =~  \
-\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>                           ]]
+\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>                             ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>  ]]
+\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>  ]]
 }
 
 @test "'_render --pandoc' with todo item displays marked-up undone / open checkbox (no space)." {
@@ -131,11 +130,11 @@ export _S=" "
   [[    "${output}"    =~  \<\!DOCTYPE\ html\>  ]]
 
   [[    "${output}"    =~  \
-\<h1\ id=\"example-todo-one.\"\>\<span\ class=\"dim\"\>\[\</span\>                ]]
+\<h1\ id=\"example-todo-one.\"\>\<span\ class=\"muted\"\>\[\</span\>                ]]
   [[    "${output}"    =~  \
-\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>                           ]]
+\[\</span\>\<span\ class=\"identifier\"\>${_S}\</span\>                             ]]
   [[    "${output}"    =~  \
-\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"dim\"\>\]\<\/span\>  ]]
+\<span\ class=\"identifier\"\>${_S}\<\/span\>\<span\ class=\"muted\"\>\]\<\/span\>  ]]
 }
 
 # <title> #####################################################################
@@ -226,7 +225,241 @@ export _S=" "
   [[    "${output}"    =~  \<title\>nb\</title\>  ]]
 }
 
-# img tags ####################################################################
+# empty <p> elements ##########################################################
+
+@test "'_render --pandoc' with markdown file preserves empty <p> elements after '## Content' heading." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "Example File.md" \
+      --content   "$(<<HEREDOC cat
+<https://example.test>
+
+## Description
+
+Description paragraph one.
+
+ 
+
+Description paragraph three.
+
+## Content
+
+Content paragraph one.
+
+ 
+
+Content paragraph three.
+HEREDOC
+)"
+  }
+
+  run "${_NB}" helpers render "${NB_DIR}/home/Example File.md" --pandoc
+
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"   ==  0                                 ]]
+  [[    "${output}"   =~  \<\!DOCTYPE\ html\>               ]]
+
+  [[    "${output}"   =~  \
+.*\<h2\ id=\"description\"\>Description\</h2\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ one.\<\/p\>${_NEWLINE}\
+.*\<p\>\ \</p\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ three\.\</p\>${_NEWLINE}\
+.*\<h2\ id=\"content\"\>Content\</h2\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>\ \</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+}
+
+@test "'_render --bookmark --pandoc' with markdown file strips empty <p> elements after '## Page Content' heading." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "Example File.md" \
+      --content   "$(<<HEREDOC cat
+<https://example.test>
+
+## Description
+
+Description paragraph one.
+
+ 
+
+Description paragraph three.
+
+## Page Content
+
+Content paragraph one.
+
+ 
+
+Content paragraph three.
+HEREDOC
+)"
+  }
+
+  run "${_NB}" helpers render "${NB_DIR}/home/Example File.md" --bookmark --pandoc
+
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"   ==  0                                 ]]
+  [[    "${output}"   =~  \<\!DOCTYPE\ html\>               ]]
+
+  [[    "${output}"   =~ \
+.*\<h2\ id=\"description\"\>Description\</h2\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ one.\<\/p\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ three\.\</p\>${_NEWLINE}\
+.*\<h2\ id=\"page-content\"\>Page\ Content\</h2\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+
+  [[ !  "${output}"   =~ \
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>\ \</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+
+}
+
+@test "'_render --bookmark --pandoc' with markdown file strips empty <p> elements after '## Content' heading." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "Example File.md" \
+      --content   "$(<<HEREDOC cat
+<https://example.test>
+
+## Description
+
+Description paragraph one.
+
+ 
+
+Description paragraph three.
+
+## Content
+
+Content paragraph one.
+
+ 
+
+Content paragraph three.
+HEREDOC
+)"
+  }
+
+  run "${_NB}" helpers render "${NB_DIR}/home/Example File.md" --bookmark --pandoc
+
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"   ==  0                                 ]]
+  [[    "${output}"   =~  \<\!DOCTYPE\ html\>               ]]
+
+  [[    "${output}"   =~ \
+.*\<h2\ id=\"description\"\>Description\</h2\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ one.\<\/p\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ three\.\</p\>${_NEWLINE}\
+.*\<h2\ id=\"content\"\>Content\</h2\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+
+  [[ !  "${output}"   =~ \
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>\ \</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+}
+
+@test "'_render --bookmark' with html file strips empty <p> elements after '## Content' heading." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "Example File.html" \
+      --content   "$(<<HEREDOC cat
+<p><a href="https://example.test">https://example.test</a></p>
+<h2 id="description">Description</h2>
+<p>Description paragraph one.</p>
+<p> </p>
+<p>Description paragraph three.</p>
+<h2 id="content">Content</h2>
+<p>Content paragraph one.</p>
+<p> </p>
+<p>Content paragraph three.</p>
+HEREDOC
+)"
+  }
+
+  run "${_NB}" helpers render "${NB_DIR}/home/Example File.html" --bookmark
+
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"   ==  0                                 ]]
+  [[    "${output}"   =~  \<\!DOCTYPE\ html\>               ]]
+
+  [[    "${output}"   =~ \
+.*\<h2\ id=\"description\"\>Description\</h2\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ one.\<\/p\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ three\.\</p\>${_NEWLINE}\
+.*\<h2\ id=\"content\"\>Content\</h2\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+
+  [[ !  "${output}"   =~ \
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>\ \</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+}
+
+@test "'_render --bookmark' with html file strips empty <p> elements after '## Page Content' heading" {
+  {
+    "${_NB}" init
+
+    "${_NB}" add  "Example File.html" \
+      --content   "$(<<HEREDOC cat
+<p><a href="https://example.test">https://example.test</a></p>
+<h2 id="description">Description</h2>
+<p>Description paragraph one.</p>
+<p> </p>
+<p>Description paragraph three.</p>
+<h2 id="page-content">Page Content</h2>
+<p>Content paragraph one.</p>
+<p> </p>
+<p>Content paragraph three.</p>
+HEREDOC
+)"
+  }
+
+  run "${_NB}" helpers render "${NB_DIR}/home/Example File.html" --bookmark
+
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[    "${status}"   ==  0                                 ]]
+  [[    "${output}"   =~  \<\!DOCTYPE\ html\>               ]]
+
+  [[    "${output}"   =~ \
+.*\<h2\ id=\"description\"\>Description\</h2\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ one.\<\/p\>${_NEWLINE}\
+.*\<p\>Description\ paragraph\ three\.\</p\>${_NEWLINE}\
+.*\<h2\ id=\"page-content\"\>Page\ Content\</h2\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+
+  [[ !  "${output}"   =~ \
+.*\<p\>Content\ paragraph\ one\.\</p\>${_NEWLINE}\
+.*\<p\>\ \</p\>${_NEWLINE}\
+.*\<p\>Content\ paragraph\ three\.\</p\>                    ]]
+}
+
+# <img> tags ##################################################################
 
 @test "'_render --pandoc' with markdown file preserves <img> tags after '## Content' heading." {
   {
@@ -240,7 +473,7 @@ export _S=" "
 
 Example image one: ![Example Image One](/not-valid-1.png)
 
-## Page Content
+## Content
 
 More example ![Example Image Two](/not-valid-2.png) content ![Example Image Three](/not-valid-3.png) here.
 HEREDOC
@@ -276,7 +509,7 @@ HEREDOC
 
 Example image one: ![Example Image One](/not-valid-1.png)
 
-## Page Content
+## Content
 
 More example ![Example Image Two](/not-valid-2.png) content ![Example Image Three](/not-valid-3.png) here.
 HEREDOC

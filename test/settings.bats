@@ -1001,7 +1001,109 @@ skip "Determine how to test interactive prompt."
   [[ "$("${_NB}" settings get NB_LIMIT)" == 5 ]]
 }
 
-@test "'settings set limit' with valid argument sets and exits." {
+@test "'settings set limit' with valid 'auto' argument sets and exits." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" settings set limit auto
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ ${status} -eq 0                                ]]
+  [[ "${output}" =~ NB_LIMIT                        ]]
+  [[ "${output}" =~ set\ to\                        ]]
+  [[ "${output}" =~ auto                            ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == "auto"  ]]
+}
+
+@test "'settings set limit' with valid 'auto-5' argument sets and exits." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" settings set limit auto-5
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ ${status} -eq 0                                  ]]
+  [[ "${output}" =~ NB_LIMIT                          ]]
+  [[ "${output}" =~ set\ to\                          ]]
+  [[ "${output}" =~ auto\-5                           ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == "auto-5"  ]]
+}
+
+@test "'settings set limit' with valid 'auto-5^10' argument sets and exits." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" settings set limit auto-5^10
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ ${status} -eq 0                                    ]]
+  [[ "${output}" =~ NB_LIMIT                            ]]
+  [[ "${output}" =~ set\ to\                            ]]
+  [[ "${output}" =~ auto\-5\^10                         ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == "auto-5^10" ]]
+}
+
+@test "'settings set limit' with valid 'auto+5' argument sets and exits." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" settings set limit auto+5
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ ${status} -eq 0                                  ]]
+  [[ "${output}" =~ NB_LIMIT                          ]]
+  [[ "${output}" =~ set\ to\                          ]]
+  [[ "${output}" =~ auto\+5                           ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == "auto+5"  ]]
+}
+
+@test "'settings set limit' with valid 'auto+5^10' argument sets and exits." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" settings set limit auto-5^10
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ ${status} -eq 0                                    ]]
+  [[ "${output}" =~ NB_LIMIT                            ]]
+  [[ "${output}" =~ set\ to\                            ]]
+  [[ "${output}" =~ auto\-5\^10                         ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == "auto-5^10" ]]
+}
+
+@test "'settings set limit' with valid 'auto^10' argument sets and exits." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" settings set limit auto^10
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ ${status} -eq 0                                    ]]
+  [[ "${output}" =~ NB_LIMIT                            ]]
+  [[ "${output}" =~ set\ to\                            ]]
+  [[ "${output}" =~ auto\^10                            ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == "auto^10"   ]]
+}
+
+@test "'settings set limit' with valid number argument sets and exits." {
   {
     "${_NB}" init
   }
@@ -1018,7 +1120,7 @@ skip "Determine how to test interactive prompt."
   [[ "$("${_NB}" settings get NB_LIMIT)" == 6 ]]
 }
 
-@test "'settings set NB_LIMIT' with invalid argument exits with error." {
+@test "'settings set NB_LIMIT' with invalid arguments exits with error." {
   {
     "${_NB}" init
   }
@@ -1029,7 +1131,29 @@ skip "Determine how to test interactive prompt."
   [[ "${output}" =~ set\ to\  ]]
   [[ "${output}" =~ 7         ]]
 
-  run "${_NB}" settings set NB_LIMIT example
+  run "${_NB}" settings set limit example
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+  printf "get NB_LIMIT: '%s'\\n" "$("${_NB}" settings get NB_LIMIT)"
+
+  [[ ${status} -eq 1                          ]]
+  [[ "${output}" =~ NB_LIMIT                  ]]
+  [[ "${output}" =~ must\ be\                 ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == 7 ]]
+
+  run "${_NB}" settings set limit auto--5
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+  printf "get NB_LIMIT: '%s'\\n" "$("${_NB}" settings get NB_LIMIT)"
+
+  [[ ${status} -eq 1                          ]]
+  [[ "${output}" =~ NB_LIMIT                  ]]
+  [[ "${output}" =~ must\ be\                 ]]
+  [[ "$("${_NB}" settings get NB_LIMIT)" == 7 ]]
+
+  run "${_NB}" settings set limit auto++5
 
   printf "\${status}: '%s'\\n" "${status}"
   printf "\${output}: '%s'\\n" "${output}"
@@ -1060,7 +1184,7 @@ skip "Determine how to test interactive prompt."
   [[ "$("${_NB}" settings get NB_SYNTAX_THEME)" == "Monokai Extended" ]]
 }
 
-@test "'settings set syntax' with valid argument sets and exits." {
+@test "'settings set syntax' with valid 'Solarized (dark)' argument sets and exits." {
   {
     "${_NB}" init
   }
@@ -1075,6 +1199,23 @@ skip "Determine how to test interactive prompt."
   [[ "${output}" =~ set\ to\                                          ]]
   [[ "${output}" =~ Solarized\ \(dark\)                               ]]
   [[ "$("${_NB}" settings get NB_SYNTAX_THEME)" == "Solarized (dark)" ]]
+}
+
+@test "'settings set syntax' with valid 'Solarized (light)' argument sets and exits." {
+  {
+    "${_NB}" init
+  }
+
+  run "${_NB}" settings set syntax "Solarized (light)"
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ ${status} -eq 0                                                    ]]
+  [[ "${output}" =~ NB_SYNTAX_THEME                                     ]]
+  [[ "${output}" =~ set\ to\                                            ]]
+  [[ "${output}" =~ Solarized\ \(light\)                                ]]
+  [[ "$("${_NB}" settings get NB_SYNTAX_THEME)" == "Solarized (light)"  ]]
 }
 
 @test "'settings set NB_SYNTAX_THEME' with invalid argument exits with error." {

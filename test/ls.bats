@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# shellcheck disable=SC2030,SC2031
 
 load test_helper
 
@@ -25,6 +26,236 @@ line four
 HEREDOC
 }
 
+# folders first ###############################################################
+
+@test "'ls --folders-first' prints folders first while preserving pinning." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add "File One.md"    --content "Example content one."
+    "${_NB}" folder add "Folder One"
+    "${_NB}" add "File Two.md"    --content "Example content two."
+    "${_NB}" add "File Three.md"  --content "Example content three."
+    "${_NB}" folder add "Folder Two"
+    "${_NB}" add "File Four.md"   --content "Example content four."
+    "${_NB}" folder add "Folder Three"
+
+    "${_NB}" pin "Folder Two"
+    "${_NB}" pin "File Three.md"
+
+    export NB_FOOTER=0
+    export NB_HEADER=0
+  }
+
+  run "${_NB}" ls
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 7 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📌\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*4.*].*\ 📌\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*7.*].*\ 📂\ Folder\ Three                                      ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*6.*].*\ File\ Four\.md\ \·\ \"Example\ content\ four\.\"       ]]
+  [[ "${lines[4]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"         ]]
+  [[ "${lines[5]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                        ]]
+  [[ "${lines[6]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"         ]]
+
+  run "${_NB}" ls --folders-first
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 7 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📌\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*4.*].*\ 📌\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*7.*].*\ 📂\ Folder\ Three                                      ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                        ]]
+  [[ "${lines[4]}"  =~  \
+.*[.*6.*].*\ File\ Four\.md\ \·\ \"Example\ content\ four\.\"       ]]
+  [[ "${lines[5]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"         ]]
+
+  [[ "${lines[6]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"         ]]
+}
+
+@test "'ls --folders-first' prints folders first." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add "File One.md"    --content "Example content one."
+    "${_NB}" folder add "Folder One"
+    "${_NB}" add "File Two.md"    --content "Example content two."
+    "${_NB}" add "File Three.md"  --content "Example content three."
+    "${_NB}" folder add "Folder Two"
+
+    export NB_FOOTER=0
+    export NB_HEADER=0
+  }
+
+  run "${_NB}" ls
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 5 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*4.*].*\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"     ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                    ]]
+  [[ "${lines[4]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"     ]]
+
+  run "${_NB}" ls --folders-first
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 5 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                    ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*4.*].*\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"     ]]
+
+  [[ "${lines[4]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"     ]]
+}
+
+@test "'NB_FOLDERS_FIRST=1 ls' prints folders first." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add "File One.md"    --content "Example content one."
+    "${_NB}" folder add "Folder One"
+    "${_NB}" add "File Two.md"    --content "Example content two."
+    "${_NB}" add "File Three.md"  --content "Example content three."
+    "${_NB}" folder add "Folder Two"
+
+    export NB_FOOTER=0
+    export NB_HEADER=0
+  }
+
+  run "${_NB}" ls
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 5 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*4.*].*\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"     ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                    ]]
+  [[ "${lines[4]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"     ]]
+
+  NB_FOLDERS_FIRST=1 run "${_NB}" ls
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 5 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                    ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*4.*].*\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"     ]]
+
+  [[ "${lines[4]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"     ]]
+}
+
+@test "'NB_FOLDERS_FIRST=1 ls --no-folders-first' prints without folders first." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add "File One.md"    --content "Example content one."
+    "${_NB}" folder add "Folder One"
+    "${_NB}" add "File Two.md"    --content "Example content two."
+    "${_NB}" add "File Three.md"  --content "Example content three."
+    "${_NB}" folder add "Folder Two"
+
+    export NB_FOOTER=0
+    export NB_HEADER=0
+  }
+
+  run "${_NB}" ls
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 5 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*4.*].*\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"     ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                    ]]
+  [[ "${lines[4]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"     ]]
+
+  NB_FOLDERS_FIRST=1 run "${_NB}" ls --no-folders-first
+
+  printf "\${status}: '%s'\\n" "${status}"
+  printf "\${output}: '%s'\\n" "${output}"
+
+  [[ "${status}"    -eq 0 ]]
+  [[ "${#lines[@]}" -eq 5 ]]
+
+  [[ "${lines[0]}"  =~  \
+.*[.*5.*].*\ 📂\ Folder\ Two                                    ]]
+  [[ "${lines[1]}"  =~  \
+.*[.*4.*].*\ File\ Three\.md\ \·\ \"Example\ content\ three\.\" ]]
+  [[ "${lines[2]}"  =~  \
+.*[.*3.*].*\ File\ Two\.md\ \·\ \"Example\ content\ two\.\"     ]]
+  [[ "${lines[3]}"  =~  \
+.*[.*2.*].*\ 📂\ Folder\ One                                    ]]
+  [[ "${lines[4]}"  =~  \
+.*[.*1.*].*\ File\ One\.md\ \·\ \"Example\ content\ one\.\"     ]]
+}
+
 # tags ########################################################################
 
 @test "'--tags' exits with status 0 and prints tags in the current notebook." {
@@ -34,24 +265,32 @@ HEREDOC
     "${_NB}" add "File One.md"    --content "Content one. #tag3"
     "${_NB}" add "File Two.md"    --content "Content two. #tag1"
     "${_NB}" add "File Three.md"  --content "Content three. tag1 #tag2"
-    "${_NB}" add "File Four.md"   --content "Content #tag1 four. #tag2"
+    "${_NB}" add "File Four.md"   --content "Content #tag1 #tag4 four. #tag5"
     "${_NB}" add "File Five.md"   --content "Content five."
     "${_NB}" add "File Six.md"    --content "Content six. #tag2"
     "${_NB}" add "File Seven.md"  --content "Content #tag2 Seven. #tag3 #tag1"
+    "${_NB}" add "File Eight.md"  --content "#tag6 #tag7"
+    "${_NB}" add "тестовый.md"    --content "#тест"
   }
 
   run "${_NB}" --tags
 
-  printf "\${status}:   '%s'\\n" "${status}"
-  printf "\${output}:   '%s'\\n" "${output}"
-  printf "\${lines[0]}: '%s'\\n" "${lines[0]}"
+  printf "\${status}:     '%s'\\n" "${status}"
+  printf "\${output}:     '%s'\\n" "${output}"
+  printf "\${lines[0]}:   '%s'\\n" "${lines[0]}"
+  printf "\${#lines[@]}:  '%s'\\n" "${#lines[@]}"
 
-  [[    "${status}"     -eq 0       ]]
-  [[    "${#lines[@]}"  -eq 3       ]]
+  [[    "${status}"     -eq 0     ]]
+  [[    "${#lines[@]}"  -eq 8     ]]
 
-  [[    "${lines[0]}"   =~  \#tag1  ]]
-  [[    "${lines[1]}"   =~  \#tag2  ]]
-  [[    "${lines[2]}"   =~  \#tag3  ]]
+  printf "%s\\n" "${output}" | grep -q "\#tag1"
+  printf "%s\\n" "${output}" | grep -q "\#tag2"
+  printf "%s\\n" "${output}" | grep -q "\#tag3"
+  printf "%s\\n" "${output}" | grep -q "\#tag5"
+  printf "%s\\n" "${output}" | grep -q "\#tag5"
+  printf "%s\\n" "${output}" | grep -q "\#tag6"
+  printf "%s\\n" "${output}" | grep -q "\#tag7"
+  printf "%s\\n" "${output}" | grep -q "\#тест"
 }
 
 @test "'--tag tag1,'#tag2' exits with status 0 and prints matches as an AND query." {
@@ -65,6 +304,7 @@ HEREDOC
     "${_NB}" add "File Five.md"   --content "Content five."
     "${_NB}" add "File Six.md"    --content "Content six. #tag2"
     "${_NB}" add "File Seven.md"  --content "Content #tag2 Seven. #tag3 #tag1"
+    "${_NB}" add "тестовый.md"    --content "#тест"
   }
 
   run "${_NB}" --tag tag1,'#tag2'
@@ -74,19 +314,41 @@ HEREDOC
   printf "\${lines[0]}: '%s'\\n" "${lines[0]}"
 
   [[    "${status}"     -eq 0                                             ]]
-  [[    "${#lines[@]}"  -eq 6                                             ]]
+  [[    "${#lines[@]}"  -eq 2                                             ]]
 
   [[    "${lines[0]}"   =~  \
 .*[.*4.*].*\ File\ Four.md\ \·\ \"Content\ #tag1\ four.\ #tag2\"          ]]
-  [[    "${lines[1]}"   =~  ^.*------------------.*$                      ]]
-  [[    "${lines[2]}"   =~  \
-1.*:.*Content\ .*#tag1.*\ four.\ .*#tag2                                  ]]
-
-  [[    "${lines[3]}"   =~  \
+  [[    "${lines[1]}"   =~  \
 .*[.*7.*].*\ File\ Seven.md\ \·\ \"Content\ #tag2\ Seven.\ #tag3\ #tag1\" ]]
-  [[    "${lines[4]}"   =~  ^.*------------------.*$                      ]]
-  [[    "${lines[5]}"   =~  \
-1.*:.*Content\ .*#tag2.*\ Seven.\ #tag3\ .*#tag1                          ]]
+}
+
+@test "'ls \#tag1 '#tag2' exits with status 0 and prints matches as an AND query." {
+  {
+    "${_NB}" init
+
+    "${_NB}" add "File One.md"    --content "Content one. #tag3"
+    "${_NB}" add "File Two.md"    --content "Content two. #tag1"
+    "${_NB}" add "File Three.md"  --content "Content three. tag1 #tag2"
+    "${_NB}" add "File Four.md"   --content "Content #tag1 four. #tag2"
+    "${_NB}" add "File Five.md"   --content "Content five."
+    "${_NB}" add "File Six.md"    --content "Content six. #tag2"
+    "${_NB}" add "File Seven.md"  --content "Content #tag2 Seven. #tag3 #tag1"
+    "${_NB}" add "тестовый.md"    --content "#тест"
+  }
+
+  run "${_NB}" \#tag1 "#tag2"
+
+  printf "\${status}:   '%s'\\n" "${status}"
+  printf "\${output}:   '%s'\\n" "${output}"
+  printf "\${lines[0]}: '%s'\\n" "${lines[0]}"
+
+  [[    "${status}"     -eq 0                                             ]]
+  [[    "${#lines[@]}"  -eq 2                                             ]]
+
+  [[    "${lines[0]}"   =~  \
+.*[.*4.*].*\ File\ Four.md\ \·\ \"Content\ #tag1\ four.\ #tag2\"          ]]
+  [[    "${lines[1]}"   =~  \
+.*[.*7.*].*\ File\ Seven.md\ \·\ \"Content\ #tag2\ Seven.\ #tag3\ #tag1\" ]]
 }
 
 # pinning #####################################################################
@@ -1763,12 +2025,107 @@ Help information:
   [[ "${lines[4]}"  =~  one   ]]
 }
 
-@test "'ls --3' exits with 0 and lists 3 files." {
+@test "'ls -<limit>' exits with 0 and lists limited files." {
+  {
+    "${_NB}" init
+
+    declare _numbers=(
+      One Two Three Four Five Six Seven Eight Nine Ten
+      Eleven Twelve Thirteen Fourteen Fifteen Sixteen
+      Seventeen Eighteen Nineteen Twenty
+    )
+
+    declare __number=
+    for   __number in "${_numbers[@]}"
+    do
+      "${_NB}" add "File ${__number}.md" --title "Title ${__number}"
+    done
+
+    "${_NB}" set footer 0
+  }
+
+  run "${_NB}" ls -2
+
+  printf "\${status}:     '%s'\\n" "${status}"
+  printf "\${output}:     '%s'\\n" "${output}"
+  printf "\${#lines[@]}:  '%s'\\n" "${#lines[@]}"
+
+  [[ "${status}"    -eq 0         ]]
+  [[ "${#lines[@]}" -eq 5         ]]
+  [[ "${lines[2]}"  =~  Twenty    ]]
+  [[ "${lines[3]}"  =~  Nineteen  ]]
+
+  run "${_NB}" ls -13
+
+  printf "\${status}:     '%s'\\n" "${status}"
+  printf "\${output}:     '%s'\\n" "${output}"
+  printf "\${#lines[@]}:  '%s'\\n" "${#lines[@]}"
+
+  [[ "${status}"    -eq 0         ]]
+  [[ "${#lines[@]}" -eq 16        ]]
+  [[ "${lines[2]}"  =~  Twenty    ]]
+  [[ "${lines[3]}"  =~  Nineteen  ]]
+}
+
+@test "'-<limit>' (no ls) exits with 0 and lists limited files." {
+  {
+    "${_NB}" init
+
+    declare _numbers=(
+      One Two Three Four Five Six Seven Eight Nine Ten
+      Eleven Twelve Thirteen Fourteen Fifteen Sixteen
+      Seventeen Eighteen Nineteen Twenty
+    )
+
+    declare __number=
+    for   __number in "${_numbers[@]}"
+    do
+      "${_NB}" add "File ${__number}.md" --title "Title ${__number}"
+    done
+
+    "${_NB}" set footer 0
+  }
+
+  run "${_NB}" -2
+
+  printf "\${status}:     '%s'\\n" "${status}"
+  printf "\${output}:     '%s'\\n" "${output}"
+  printf "\${#lines[@]}:  '%s'\\n" "${#lines[@]}"
+
+  [[ "${status}"    -eq 0         ]]
+  [[ "${#lines[@]}" -eq 5         ]]
+  [[ "${lines[2]}"  =~  Twenty    ]]
+  [[ "${lines[3]}"  =~  Nineteen  ]]
+
+  run "${_NB}" -13
+
+  printf "\${status}:     '%s'\\n" "${status}"
+  printf "\${output}:     '%s'\\n" "${output}"
+  printf "\${#lines[@]}:  '%s'\\n" "${#lines[@]}"
+
+  [[ "${status}"    -eq 0         ]]
+  [[ "${#lines[@]}" -eq 16        ]]
+  [[ "${lines[2]}"  =~  Twenty    ]]
+  [[ "${lines[3]}"  =~  Nineteen  ]]
+}
+
+@test "'ls --<limit>' exits with 0 and lists limited files." {
   {
     _setup_ls
 
     "${_NB}" set footer 0
   }
+
+  run "${_NB}" ls --2
+
+  printf "\${status}:     '%s'\\n" "${status}"
+  printf "\${output}:     '%s'\\n" "${output}"
+  printf "\${#lines[@]}:  '%s'\\n" "${#lines[@]}"
+
+  [[ "${status}"    -eq 0     ]]
+  [[ "${#lines[@]}" -eq 5     ]]
+  [[ "${lines[2]}"  =~  three ]]
+  [[ "${lines[3]}"  =~  two   ]]
 
   run "${_NB}" ls --3
 
